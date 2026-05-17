@@ -8,7 +8,13 @@ export const SAMPLE_USERS: User[] = [
     name: 'Maria Santos',
     role: 'farmer',
     location: 'Laguna, Philippines',
+    analyticsConsent: true,
     cropsPlanted: ['Rice', 'Tomato', 'Eggplant'],
+    farmSize: '2 hectares',
+    farmerType: 'small-scale',
+    soilType: 'Loamy',
+    farmingMethods: ['Organic', 'Crop rotation'],
+    createdAt: '2026-01-15T08:00:00Z',
   },
   {
     id: '2',

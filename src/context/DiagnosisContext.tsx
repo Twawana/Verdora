@@ -6,15 +6,15 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { DiagnosisResult } from '../types';
-import { SAMPLE_DIAGNOSES } from '../data/sampleData';
-
-const HISTORY_STORAGE_KEY = '@verdora_diagnosis_history';
+import { useAuth } from './AuthContext';
+import { trackCropScan } from '../services/analytics/dataCollectionService';
+import { fetchDiagnosisHistory } from '../services/api/cropDiagnosisService';
 
 interface DiagnosisContextValue {
   history: DiagnosisResult[];
   isLoading: boolean;
+  refreshHistory: () => Promise<void>;
   addDiagnosis: (result: DiagnosisResult) => Promise<void>;
   clearHistory: () => Promise<void>;
 }
@@ -22,49 +22,44 @@ interface DiagnosisContextValue {
 const DiagnosisContext = createContext<DiagnosisContextValue | undefined>(undefined);
 
 export function DiagnosisProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [history, setHistory] = useState<DiagnosisResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load persisted scan history (seed with sample data on first launch)
+  const refreshHistory = useCallback(async () => {
+    if (!user) {
+      setHistory([]);
+      return;
+    }
+    const scans = await fetchDiagnosisHistory(user.id);
+    setHistory(scans);
+  }, [user]);
+
   useEffect(() => {
     (async () => {
-      try {
-        const stored = await AsyncStorage.getItem(HISTORY_STORAGE_KEY);
-        if (stored) {
-          setHistory(JSON.parse(stored) as DiagnosisResult[]);
-        } else {
-          setHistory(SAMPLE_DIAGNOSES);
-          await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(SAMPLE_DIAGNOSES));
-        }
-      } finally {
-        setIsLoading(false);
-      }
+      setIsLoading(true);
+      await refreshHistory();
+      setIsLoading(false);
     })();
-  }, []);
-
-  const persist = useCallback(async (items: DiagnosisResult[]) => {
-    await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(items));
-  }, []);
+  }, [refreshHistory]);
 
   const addDiagnosis = useCallback(
     async (result: DiagnosisResult) => {
-      setHistory((prev) => {
-        const next = [result, ...prev];
-        persist(next);
-        return next;
-      });
+      if (!user) return;
+      await trackCropScan(user, result);
+      await refreshHistory();
     },
-    [persist],
+    [user, refreshHistory],
   );
 
   const clearHistory = useCallback(async () => {
     setHistory([]);
-    await AsyncStorage.removeItem(HISTORY_STORAGE_KEY);
+    // Analytics DB keeps records for admin; farmer view clears locally only
   }, []);
 
   const value = useMemo(
-    () => ({ history, isLoading, addDiagnosis, clearHistory }),
-    [history, isLoading, addDiagnosis, clearHistory],
+    () => ({ history, isLoading, refreshHistory, addDiagnosis, clearHistory }),
+    [history, isLoading, refreshHistory, addDiagnosis, clearHistory],
   );
 
   return <DiagnosisContext.Provider value={value}>{children}</DiagnosisContext.Provider>;

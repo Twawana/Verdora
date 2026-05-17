@@ -24,4 +24,10 @@ export {
   deletePlantingEvent,
   importCalendarDataset,
 } from './plantationCalendarService';
-export { listUsers, getUserById, exportUserReport } from './adminService';
+export { loadChatHistory, saveChatHistory } from './chatService';
+export {
+  getAdminDashboard,
+  listUsers,
+  getUserById,
+  exportUserReport,
+} from './adminService';

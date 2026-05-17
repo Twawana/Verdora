@@ -1,0 +1,56 @@
+[
+  {
+    "crop_name": "Corn",
+    "planting_window": ["May", "June", "July"],
+    "maturity_days": 100,
+    "spacing": "20-30 cm between plants; 60-75 cm between rows",
+    "water_requirement": "Moderate to high",
+    "temperature_range": "18-32",
+    "yield_estimate": "3-6 t/ha"
+  },
+  {
+    "crop_name": "Tomato",
+    "planting_window": ["February", "March", "April", "September"],
+    "maturity_days": 70,
+    "spacing": "40-50 cm between plants; 75-100 cm between rows",
+    "water_requirement": "Moderate",
+    "temperature_range": "18-29",
+    "yield_estimate": "20-40 t/ha"
+  },
+  {
+    "crop_name": "Rice",
+    "planting_window": ["May", "June", "July"],
+    "maturity_days": 120,
+    "spacing": "15-20 cm between rows",
+    "water_requirement": "High (flooded/irrigated)",
+    "temperature_range": "20-35",
+    "yield_estimate": "4-7 t/ha"
+  },
+  {
+    "crop_name": "Eggplant",
+    "planting_window": ["April", "May", "June"],
+    "maturity_days": 90,
+    "spacing": "45-60 cm between plants; 90 cm between rows",
+    "water_requirement": "Moderate",
+    "temperature_range": "20-30",
+    "yield_estimate": "10-25 t/ha"
+  },
+  {
+    "crop_name": "Cassava",
+    "planting_window": ["March", "April", "May"],
+    "maturity_days": 240,
+    "spacing": "100-150 cm between rows",
+    "water_requirement": "Low to moderate",
+    "temperature_range": "20-35",
+    "yield_estimate": "8-12 t/ha"
+  },
+  {
+    "crop_name": "Onion",
+    "planting_window": ["October", "November", "December"],
+    "maturity_days": 110,
+    "spacing": "10-15 cm between plants; 20-25 cm between rows",
+    "water_requirement": "Low to moderate",
+    "temperature_range": "13-25",
+    "yield_estimate": "10-30 t/ha"
+  }
+]

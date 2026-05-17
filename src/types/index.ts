@@ -1,14 +1,25 @@
 /** User roles supported by Verdora */
 export type UserRole = 'farmer' | 'admin';
 
+export type FarmerType = 'small-scale' | 'commercial';
+
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  /** Critical for regional insights & segmentation */
   location?: string;
   cropsPlanted?: string[];
+  farmSize?: string;
+  farmerType?: FarmerType;
+  soilType?: string;
+  farmingMethods?: string[];
+  analyticsConsent?: boolean;
+  createdAt?: string;
 }
+
+export * from './analytics';
 
 /** Crop diagnosis result from AI scanner */
 export interface DiagnosisResult {

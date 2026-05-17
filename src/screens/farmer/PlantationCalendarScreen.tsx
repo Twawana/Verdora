@@ -8,9 +8,12 @@ import {
   Text,
   View,
 } from 'react-native';
+import { ScreenHeader } from '../../components/navigation/ScreenHeader';
 import { Button, Card, ScreenWrapper } from '../../components/ui';
 import { EventFormModal, type EventFormValues } from '../../components/calendar/EventFormModal';
 import { PlantingEventCard } from '../../components/calendar/PlantingEventCard';
+import { useAuth } from '../../context/AuthContext';
+import { trackFarmingRecord } from '../../services/analytics/dataCollectionService';
 import {
   createPlantingEvent,
   deletePlantingEvent,
@@ -20,8 +23,10 @@ import {
 import { toApiError } from '../../services/api/errors';
 import type { PlantingEvent } from '../../types';
 import { colors, spacing, typography } from '../../constants/theme';
+import { useNavigation } from '@react-navigation/native';
 
 export function PlantationCalendarScreen() {
+  const { user } = useAuth();
   const [events, setEvents] = useState<PlantingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,11 +35,12 @@ export function PlantationCalendarScreen() {
   const [editingEvent, setEditingEvent] = useState<PlantingEvent | null>(null);
 
   const loadEvents = useCallback(async (isRefresh = false) => {
+    if (!user) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const data = await listPlantingEvents();
+      const data = await listPlantingEvents(user.id);
       setEvents(data);
     } catch (err) {
       Alert.alert('Error', toApiError(err).message);
@@ -42,7 +48,7 @@ export function PlantationCalendarScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadEvents();
@@ -53,12 +59,17 @@ export function PlantationCalendarScreen() {
     setModalVisible(true);
   };
 
+  const nav = useNavigation<any>();
+
+  const openLibrary = () => nav.navigate('CropLibrary');
+
   const openEdit = (event: PlantingEvent) => {
     setEditingEvent(event);
     setModalVisible(true);
   };
 
   const handleSave = async (values: EventFormValues) => {
+    if (!user) return;
     setSaving(true);
     try {
       const payload = {
@@ -69,11 +80,14 @@ export function PlantationCalendarScreen() {
         notes: values.notes.trim() || undefined,
       };
 
+      let saved: PlantingEvent;
       if (editingEvent) {
-        await updatePlantingEvent(editingEvent.id, payload);
+        saved = await updatePlantingEvent(user.id, editingEvent.id, payload);
       } else {
-        await createPlantingEvent(payload);
+        saved = await createPlantingEvent(user.id, payload);
       }
+
+      await trackFarmingRecord(user, saved);
 
       setModalVisible(false);
       await loadEvents(true);
@@ -92,7 +106,8 @@ export function PlantationCalendarScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await deletePlantingEvent(event.id);
+            if (!user) return;
+            await deletePlantingEvent(user.id, event.id);
             await loadEvents(true);
           } catch (err) {
             Alert.alert('Error', toApiError(err).message);
@@ -114,14 +129,13 @@ export function PlantationCalendarScreen() {
           />
         }
       >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Plantation Calendar</Text>
-            <Text style={styles.subtitle}>Plan and track your planting schedule</Text>
-          </View>
-        </View>
+        <ScreenHeader
+          title="Plantation Calendar"
+          subtitle="Your real planting & harvest schedule"
+        />
 
         <Button title="+ Add planting event" onPress={openAdd} fullWidth />
+        <Button title="Browse crop library" onPress={openLibrary} fullWidth style={{ marginTop: 8 }} />
 
         <Text style={styles.sectionTitle}>
           Upcoming & scheduled ({events.length})

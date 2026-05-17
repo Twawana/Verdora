@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '../../components/navigation/ScreenHeader';
 import { Button, Card } from '../../components/ui';
 import { ConfidenceBar } from '../../components/scanner/ConfidenceBar';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
@@ -16,10 +17,7 @@ export function DiagnosisResultsScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Button title="← Back" variant="ghost" onPress={() => navigation.goBack()} />
-          <Text style={styles.title}>Diagnosis Results</Text>
-        </View>
+        <ScreenHeader title="Diagnosis Results" showBack />
 
         {result.imageUri ? (
           <Image source={{ uri: result.imageUri }} style={styles.image} />

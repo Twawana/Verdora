@@ -13,8 +13,10 @@ import * as ImagePicker from 'expo-image-picker';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ScreenHeader } from '../../components/navigation/ScreenHeader';
 import { Button, ScreenWrapper } from '../../components/ui';
 import { DiagnosisHistoryList } from '../../components/scanner/DiagnosisHistoryList';
+import { useAuth } from '../../context/AuthContext';
 import { useDiagnosis } from '../../context/DiagnosisContext';
 import { diagnoseCropImage } from '../../services/api/cropDiagnosisService';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
@@ -31,13 +33,18 @@ export function CropScannerScreen({ navigation }: Props) {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const { user } = useAuth();
   const { history, addDiagnosis } = useDiagnosis();
 
   const runDiagnosis = useCallback(
     async (uri: string) => {
+      if (!user) {
+        Alert.alert('Sign in required', 'Please log in to scan crops.');
+        return;
+      }
       setIsAnalyzing(true);
       try {
-        const result = await diagnoseCropImage(uri);
+        const result = await diagnoseCropImage(uri, user);
         await addDiagnosis(result);
         navigation.navigate('DiagnosisResults', { result });
         setPreviewUri(null);
@@ -47,7 +54,7 @@ export function CropScannerScreen({ navigation }: Props) {
         setIsAnalyzing(false);
       }
     },
-    [addDiagnosis, navigation],
+    [addDiagnosis, navigation, user],
   );
 
   const handleCapture = async () => {
@@ -113,10 +120,10 @@ export function CropScannerScreen({ navigation }: Props) {
 
   return (
     <ScreenWrapper padded={false}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Crop Scanner</Text>
-        <Text style={styles.subtitle}>Capture or upload a photo for AI diagnosis</Text>
-      </View>
+      <ScreenHeader
+        title="Crop Scanner"
+        subtitle="Diagnosis uses crops from your calendar — add them first"
+      />
 
       {/* Camera / preview area */}
       <View style={styles.cameraContainer}>

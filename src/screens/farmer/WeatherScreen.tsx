@@ -6,9 +6,11 @@ import {
   Text,
   View,
 } from 'react-native';
+import { ScreenHeader } from '../../components/navigation/ScreenHeader';
 import { Card, ScreenWrapper } from '../../components/ui';
 import { PlantingRecommendationCard } from '../../components/weather/PlantingRecommendationCard';
 import { useAuth } from '../../context/AuthContext';
+import { trackEnvironment } from '../../services/analytics/dataCollectionService';
 import { getWeather } from '../../services/api/weatherService';
 import { toApiError } from '../../services/api/errors';
 import type { WeatherResponse } from '../../services/api/types';
@@ -31,20 +33,22 @@ export function WeatherScreen() {
   const city = user?.location?.split(',')[0]?.trim() ?? 'Laguna';
 
   const loadWeather = useCallback(async (isRefresh = false) => {
+    if (!user) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError('');
 
     try {
-      const data = await getWeather({ city });
+      const data = await getWeather(user, { city });
       setWeather(data);
+      await trackEnvironment(user, data);
     } catch (err) {
       setError(toApiError(err).message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [city]);
+  }, [city, user]);
 
   useEffect(() => {
     loadWeather();
@@ -61,8 +65,10 @@ export function WeatherScreen() {
         />
       }
     >
-      <Text style={styles.title}>Weather Dashboard</Text>
-      <Text style={styles.subtitle}>Forecasts & planting recommendations for {city}</Text>
+      <ScreenHeader
+        title="Weather"
+        subtitle={`Live data for ${user?.location ?? city}`}
+      />
 
       {loading && !weather ? (
         <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />

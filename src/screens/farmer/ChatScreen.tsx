@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,30 +12,66 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatBubble } from '../../components/chat/ChatBubble';
-import { sendChatMessage } from '../../services/api/chatService';
+import { useAuth } from '../../context/AuthContext';
+import { trackChatQuestion } from '../../services/analytics/dataCollectionService';
+import {
+  loadChatHistory,
+  saveChatHistory,
+  sendChatMessage,
+} from '../../services/api/chatService';
+import { getFarmerSummary } from '../../services/data/farmerDataService';
 import { toApiError } from '../../services/api/errors';
 import type { ChatMessage } from '../../types';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
 
-const WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
-    "Hello! I'm Verdora, your farming assistant. Ask me about crops, pests, diseases, planting times, or weather advice.",
-  timestamp: new Date().toISOString(),
-};
-
-const SUGGESTED_PROMPTS = [
-  'When should I plant rice?',
-  'How to treat tomato blight?',
-  'Best fertilizer for corn?',
-];
+function welcomeMessage(crops: string[]): ChatMessage {
+  const cropHint =
+    crops.length > 0
+      ? ` I see you grow ${crops.join(', ')} — ask me anything about them.`
+      : ' Add crops in Calendar so I can give specific advice.';
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    content: `Hello! I'm Verdora.${cropHint}`,
+    timestamp: new Date().toISOString(),
+  };
+}
 
 export function ChatScreen() {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [prompts, setPrompts] = useState<string[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (!user) return;
+      const summary = await getFarmerSummary(user);
+      const stored = await loadChatHistory(user.id);
+      const crops = summary.crops;
+      setPrompts(
+        crops.length > 0
+          ? [
+              `When should I plant ${crops[0]}?`,
+              `How is my ${crops[0]} doing?`,
+              `Weather advice for ${crops[0]}`,
+            ]
+          : ['What crops should I start with?', 'How do I use the calendar?'],
+      );
+      setMessages(stored.length > 0 ? stored : [welcomeMessage(crops)]);
+      setLoading(false);
+    })();
+  }, [user]);
+
+  const persistMessages = useCallback(
+    async (msgs: ChatMessage[]) => {
+      if (user) await saveChatHistory(user.id, msgs);
+    },
+    [user],
+  );
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
@@ -43,7 +79,7 @@ export function ChatScreen() {
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed || sending || !user) return;
 
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -52,22 +88,27 @@ export function ChatScreen() {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
     setInput('');
     setSending(true);
     scrollToEnd();
 
+    await trackChatQuestion(user, trimmed);
+
     try {
-      const history = [...messages, userMessage]
+      const history = nextMessages
         .filter((m) => m.id !== 'welcome')
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const { reply } = await sendChatMessage({
+      const { reply } = await sendChatMessage(user, {
         message: trimmed,
         history: history.slice(-10),
       });
 
-      setMessages((prev) => [...prev, reply]);
+      const withReply = [...nextMessages, reply];
+      setMessages(withReply);
+      await persistMessages(withReply);
       scrollToEnd();
     } catch (err) {
       const errorMsg: ChatMessage = {
@@ -76,17 +117,27 @@ export function ChatScreen() {
         content: `Sorry, I couldn't respond. ${toApiError(err).message}`,
         timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, errorMsg]);
+      const withErr = [...nextMessages, errorMsg];
+      setMessages(withErr);
+      await persistMessages(withErr);
     } finally {
       setSending(false);
     }
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ActivityIndicator color={colors.primary} style={styles.loader} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>Farming Assistant</Text>
-        <Text style={styles.subtitle}>Powered by Verdora AI</Text>
+        <Text style={styles.subtitle}>Answers based on your real farm data</Text>
       </View>
 
       <FlatList
@@ -102,12 +153,12 @@ export function ChatScreen() {
       {sending && (
         <View style={styles.typing}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.typingText}>Verdora is thinking…</Text>
+          <Text style={styles.typingText}>Thinking…</Text>
         </View>
       )}
 
       <View style={styles.prompts}>
-        {SUGGESTED_PROMPTS.map((prompt) => (
+        {prompts.map((prompt) => (
           <Pressable
             key={prompt}
             style={styles.promptChip}
@@ -128,7 +179,7 @@ export function ChatScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Ask a farming question…"
+            placeholder="Ask about your crops…"
             placeholderTextColor={colors.textMuted}
             multiline
             maxLength={500}
@@ -149,6 +200,7 @@ export function ChatScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  loader: { flex: 1, marginTop: 100 },
   header: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,

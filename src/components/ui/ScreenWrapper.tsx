@@ -30,7 +30,7 @@ export function ScreenWrapper({
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <ScrollView
-          contentContainerStyle={[contentStyle, styles.scrollContent]}
+          contentContainerStyle={[styles.scrollContent, padded && styles.padded, style]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           refreshControl={refreshControl}
@@ -54,5 +54,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1 },
   padded: { paddingHorizontal: spacing.md },
-  scrollContent: { paddingBottom: spacing.xxl },
+  scrollContent: { flexGrow: 1, paddingBottom: spacing.xxl },
 });

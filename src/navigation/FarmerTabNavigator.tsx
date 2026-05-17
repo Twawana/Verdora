@@ -37,12 +37,13 @@ export function FarmerTabNavigator() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           paddingTop: 4,
-          height: 60,
+          height: 64,
+          paddingBottom: 4,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Hub' }} />
       <Tab.Screen name="Scanner" component={CropScannerScreen} options={{ title: 'Scan' }} />
       <Tab.Screen name="Calendar" component={PlantationCalendarScreen} options={{ title: 'Calendar' }} />
       <Tab.Screen name="Weather" component={WeatherScreen} options={{ title: 'Weather' }} />

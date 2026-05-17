@@ -26,9 +26,13 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  name: string;
+  name?: string;
   email: string;
   password: string;
+  location: string;
+  farmSize?: string;
+  farmerType?: 'small-scale' | 'commercial';
+  analyticsConsent?: boolean;
 }
 
 export interface AuthTokens {
@@ -91,3 +95,5 @@ export interface AdminExportResponse {
   generatedAt: string;
   downloadUrl?: string;
 }
+
+export type { AdminDashboardInsights } from '../../types/analytics';

@@ -17,6 +17,8 @@ export type FarmerTabParamList = {
 export type FarmerStackParamList = {
   FarmerTabs: undefined;
   DiagnosisResults: { result: DiagnosisResult };
+  CropLibrary: undefined;
+  CropDetail: { cropName: string };
 };
 
 export type RootStackParamList = {

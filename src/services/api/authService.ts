@@ -1,6 +1,7 @@
 import { env } from '../../config/env';
 import { SAMPLE_PASSWORD, SAMPLE_USERS } from '../../data/sampleData';
 import type { User } from '../../types';
+import { trackUserProfile } from '../analytics/dataCollectionService';
 import { mockDelay, mockId } from '../mocks/mockUtils';
 import { API_ENDPOINTS } from './endpoints';
 import { apiPost, apiClient } from './client';
@@ -18,27 +19,39 @@ async function mockLogin({ email, password }: LoginRequest): Promise<LoginRespon
     throw new Error('Invalid email or password');
   }
 
+  await trackUserProfile(user);
+
   return {
     user,
     tokens: { accessToken: `mock_token_${user.id}`, refreshToken: `mock_refresh_${user.id}` },
   };
 }
 
-async function mockRegister({ name, email, password }: RegisterRequest): Promise<LoginResponse> {
+async function mockRegister(payload: RegisterRequest): Promise<LoginResponse> {
   await mockDelay(800);
 
-  if (password.length < 6) {
+  if (payload.password.length < 6) {
     throw new Error('Password must be at least 6 characters');
+  }
+
+  if (!payload.location?.trim()) {
+    throw new Error('Location is required');
   }
 
   const user: User = {
     id: mockId('user'),
-    email: email.trim().toLowerCase(),
-    name: name.trim(),
+    email: payload.email.trim().toLowerCase(),
+    name: payload.name?.trim() || 'Farmer',
     role: 'farmer',
-    location: 'Not set',
+    location: payload.location.trim(),
+    farmSize: payload.farmSize,
+    farmerType: payload.farmerType,
+    analyticsConsent: payload.analyticsConsent,
     cropsPlanted: [],
+    createdAt: new Date().toISOString(),
   };
+
+  await trackUserProfile(user);
 
   return {
     user,

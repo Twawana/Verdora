@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
   // Admin
   admin: {
     users: '/api/v1/admin/users',
+    dashboard: '/api/v1/admin/dashboard',
     userById: (id: string) => `/api/v1/admin/users/${id}`,
     exportReport: '/api/v1/admin/export',
   },

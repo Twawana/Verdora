@@ -1,31 +1,50 @@
 import { env } from '../../config/env';
-import type { WeatherData } from '../../types';
-import {
-  MOCK_PLANTING_RECOMMENDATIONS,
-  MOCK_WEATHER,
-} from '../mocks/mockData';
+import type { User, WeatherData } from '../../types';
+import { getLastEnvironmentLog } from '../analytics/dataCollectionService';
+import { getUserFarmingRecords } from '../analytics/dataCollectionService';
 import { mockDelay } from '../mocks/mockUtils';
 import { API_ENDPOINTS, EXTERNAL_APIS } from './endpoints';
 import { apiGet, externalClient } from './client';
 import type { PlantingRecommendation, WeatherQueryParams, WeatherResponse } from './types';
 
-// ——— Mock ———
-
-async function mockGetWeather(_params?: WeatherQueryParams): Promise<WeatherResponse> {
-  await mockDelay(700);
-  return {
-    ...MOCK_WEATHER,
-    plantingWindows: MOCK_PLANTING_RECOMMENDATIONS,
-  };
+function derivePlantingRecommendation(temp?: number, humidity?: number): string {
+  if (temp == null || humidity == null) {
+    return 'Check conditions daily before field work.';
+  }
+  if (temp >= 28 && humidity > 75) {
+    return 'High humidity — delay spraying; favorable for rice transplanting if fields are ready.';
+  }
+  if (temp >= 20 && temp <= 30 && humidity < 70) {
+    return 'Good conditions for transplanting vegetables and direct-seeding.';
+  }
+  return 'Monitor forecast daily; protect seedlings from midday heat stress.';
 }
 
-// ——— OpenWeatherMap (direct) ———
+function buildCropRecommendations(
+  crops: string[],
+  temp: number,
+  humidity: number,
+): PlantingRecommendation[] {
+  return crops.map((cropName) => {
+    let status: PlantingRecommendation['status'] = 'ideal';
+    let reason = `Current ${temp}°C and ${humidity}% humidity suit ${cropName} in your area.`;
+
+    if (humidity > 80) {
+      status = 'caution';
+      reason = `High humidity increases fungal risk for ${cropName} — ensure ventilation.`;
+    }
+    if (temp > 35) {
+      status = 'avoid';
+      reason = `Heat stress likely for ${cropName} — irrigate early morning or evening.`;
+    }
+
+    return { cropName, status, reason };
+  });
+}
 
 async function openWeatherGetCurrent(params: WeatherQueryParams): Promise<WeatherData> {
   const { openWeatherApiKey } = env;
-  if (!openWeatherApiKey) {
-    throw new Error('EXPO_PUBLIC_OPENWEATHER_API_KEY is not set');
-  }
+  if (!openWeatherApiKey) throw new Error('EXPO_PUBLIC_OPENWEATHER_API_KEY is not set');
 
   const query = params.city
     ? { q: params.city, appid: openWeatherApiKey, units: 'metric' }
@@ -43,72 +62,87 @@ async function openWeatherGetCurrent(params: WeatherQueryParams): Promise<Weathe
   };
 }
 
-function derivePlantingRecommendation(temp?: number, humidity?: number): string {
-  if (temp == null || humidity == null) return MOCK_WEATHER.recommendation ?? '';
-  if (temp >= 28 && humidity > 75) {
-    return 'High humidity — delay spraying; good for rice transplanting if fields are prepared.';
-  }
-  if (temp >= 20 && temp <= 30 && humidity < 70) {
-    return 'Favorable conditions for transplanting vegetables and direct-seeding corn.';
-  }
-  return 'Monitor forecast daily; protect seedlings from midday heat stress.';
-}
+async function weatherFromLastLog(user: User): Promise<WeatherResponse | null> {
+  const log = await getLastEnvironmentLog(user.id);
+  if (!log) return null;
 
-// ——— Verdora backend ———
+  const farming = await getUserFarmingRecords(user.id);
+  const crops = [...new Set(farming.map((r) => r.cropName))];
+
+  return {
+    location: log.location,
+    temperature: log.temperature,
+    humidity: log.humidity,
+    condition: log.condition,
+    icon: 'cached',
+    recommendation: derivePlantingRecommendation(log.temperature, log.humidity),
+    plantingWindows:
+      crops.length > 0
+        ? buildCropRecommendations(crops, log.temperature, log.humidity)
+        : [],
+  };
+}
 
 async function apiGetWeather(params?: WeatherQueryParams): Promise<WeatherResponse> {
   return apiGet<WeatherResponse>(API_ENDPOINTS.weather.current, { params });
 }
 
-async function apiGetPlantingRecommendations(
-  params?: WeatherQueryParams,
-): Promise<PlantingRecommendation[]> {
-  return apiGet<PlantingRecommendation[]>(API_ENDPOINTS.weather.plantingRecommendations, {
-    params,
-  });
-}
-
-// ——— Public API ———
-
 /**
- * Current weather + planting recommendations.
- * Priority: mock → OpenWeather (if key set) → Verdora API → mock fallback.
+ * Weather for the farmer's real location and crops.
  */
-export async function getWeather(params?: WeatherQueryParams): Promise<WeatherResponse> {
-  if (env.useMockApi) {
-    return mockGetWeather(params);
-  }
+export async function getWeather(user: User, params?: WeatherQueryParams): Promise<WeatherResponse> {
+  const city = params?.city ?? user.location?.split(',')[0]?.trim();
+  const query = { ...params, city };
 
-  if (env.openWeatherApiKey && (params?.city || (params?.lat && params?.lon))) {
+  const farming = await getUserFarmingRecords(user.id);
+  const crops = [
+    ...new Set([...(user.cropsPlanted ?? []), ...farming.map((r) => r.cropName)]),
+  ];
+
+  if (env.openWeatherApiKey && city) {
     try {
-      const weather = await openWeatherGetCurrent(params);
-      const plantingWindows = await apiGetPlantingRecommendations(params).catch(
-        () => MOCK_PLANTING_RECOMMENDATIONS,
-      );
-      return { ...weather, plantingWindows };
+      const weather = await openWeatherGetCurrent(query);
+      return {
+        ...weather,
+        location: user.location ?? weather.location,
+        plantingWindows: buildCropRecommendations(
+          crops,
+          weather.temperature,
+          weather.humidity,
+        ),
+      };
     } catch {
-      // fall through to backend or mock
+      // fall through
     }
   }
 
-  try {
-    return await apiGetWeather(params);
-  } catch {
-    return mockGetWeather(params);
+  if (!env.useMockApi) {
+    try {
+      return await apiGetWeather(query);
+    } catch {
+      // fall through
+    }
   }
+
+  const cached = await weatherFromLastLog(user);
+  if (cached) return cached;
+
+  await mockDelay(500);
+  return {
+    location: user.location ?? 'Set your location in profile',
+    temperature: 0,
+    humidity: 0,
+    condition: 'No data yet',
+    icon: 'na',
+    recommendation: 'Pull down to refresh after setting your location on signup.',
+    plantingWindows: [],
+  };
 }
 
 export async function getPlantingRecommendations(
+  user: User,
   params?: WeatherQueryParams,
 ): Promise<PlantingRecommendation[]> {
-  if (env.useMockApi) {
-    await mockDelay(400);
-    return MOCK_PLANTING_RECOMMENDATIONS;
-  }
-
-  try {
-    return await apiGetPlantingRecommendations(params);
-  } catch {
-    return MOCK_PLANTING_RECOMMENDATIONS;
-  }
+  const weather = await getWeather(user, params);
+  return weather.plantingWindows ?? [];
 }
