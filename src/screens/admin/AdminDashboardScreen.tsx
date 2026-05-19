@@ -85,9 +85,6 @@ export function AdminDashboardScreen() {
           <Text style={styles.subtitle}>Verdora admin — collected farmer insights</Text>
         </View>
         <View style={styles.headerActions}>
-          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>← Back</Text>
-          </Pressable>
           <Pressable onPress={logout} style={styles.logoutButton}>
             <Text style={styles.logout}>Logout</Text>
           </Pressable>
@@ -321,15 +318,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  backButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  backText: { ...typography.bodySmall, color: colors.primary },
   logoutButton: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
   statGrid: {
     flexDirection: 'row',

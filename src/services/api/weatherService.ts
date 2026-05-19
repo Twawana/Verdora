@@ -2,7 +2,6 @@ import { env } from '../../config/env';
 import type { User, WeatherData } from '../../types';
 import { getLastEnvironmentLog } from '../analytics/dataCollectionService';
 import { getUserFarmingRecords } from '../analytics/dataCollectionService';
-import { mockDelay } from '../mocks/mockUtils';
 import { API_ENDPOINTS, EXTERNAL_APIS } from './endpoints';
 import { apiGet, externalClient } from './client';
 import type { PlantingRecommendation, WeatherQueryParams, WeatherResponse } from './types';
@@ -99,6 +98,7 @@ export async function getWeather(user: User, params?: WeatherQueryParams): Promi
     ...new Set([...(user.cropsPlanted ?? []), ...farming.map((r) => r.cropName)]),
   ];
 
+  // Try OpenWeather API first
   if (env.openWeatherApiKey && city) {
     try {
       const weather = await openWeatherGetCurrent(query);
@@ -112,22 +112,21 @@ export async function getWeather(user: User, params?: WeatherQueryParams): Promi
         ),
       };
     } catch {
-      // fall through
+      // fall through to backend API
     }
   }
 
-  if (!env.useMockApi) {
-    try {
-      return await apiGetWeather(query);
-    } catch {
-      // fall through
-    }
+  // Try backend API
+  try {
+    return await apiGetWeather(query);
+  } catch {
+    // Fallback to cached data
   }
 
   const cached = await weatherFromLastLog(user);
   if (cached) return cached;
 
-  await mockDelay(500);
+  // No data available
   return {
     location: user.location ?? 'Set your location in profile',
     temperature: 0,

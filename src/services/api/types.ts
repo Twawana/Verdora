@@ -33,6 +33,7 @@ export interface RegisterRequest {
   farmSize?: string;
   farmerType?: 'small-scale' | 'commercial';
   analyticsConsent?: boolean;
+  role?: 'farmer' | 'admin';
 }
 
 export interface AuthTokens {

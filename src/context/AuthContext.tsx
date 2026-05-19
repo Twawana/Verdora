@@ -16,6 +16,7 @@ export interface RegisterProfileInput {
   farmSize?: string;
   farmerType?: FarmerType;
   analyticsConsent?: boolean;
+  role?: 'farmer' | 'admin';
 }
 
 interface AuthContextValue {
@@ -69,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         location: profile.location,
         farmSize: profile.farmSize,
         farmerType: profile.farmerType,
+        analyticsConsent: profile.analyticsConsent,
+        role: profile.role ?? 'farmer', // ✅ role is now passed
       };
       const { user: newUser } = await apiRegister(payload);
       await persistUser(newUser);

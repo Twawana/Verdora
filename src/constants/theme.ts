@@ -48,12 +48,19 @@ export const typography = {
   caption: { fontSize: 12, fontWeight: '400' as const, color: colors.textMuted },
 };
 
+import { Platform } from 'react-native';
+
 export const shadows = {
-  card: {
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+  card: Platform.select({
+    web: {
+      boxShadow: '0px 2px 8px rgba(27, 67, 50, 0.08)',
+    },
+    default: {
+      shadowColor: colors.primaryDark,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+  }) as const,
 };

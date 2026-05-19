@@ -1,25 +1,20 @@
-import { env } from '../../config/env';
 import { CROP_KNOWLEDGE, DEFAULT_CROP_KNOWLEDGE } from '../../data/cropKnowledge';
 import type { DiagnosisResult, User } from '../../types';
 import { getPrimaryCropForUser, scanRecordToDiagnosis } from '../data/farmerDataService';
 import { getUserCropScans } from '../analytics/dataCollectionService';
-import { mockDelay, mockId } from '../mocks/mockUtils';
+import { mockId } from '../mocks/mockUtils';
 import { API_ENDPOINTS } from './endpoints';
 import { apiClient } from './client';
 import type { DiagnoseCropResponse } from './types';
 
-const ANALYSIS_DELAY_MS = 1500;
-
 /**
  * Diagnose using the farmer's real registered crops (calendar + profile).
- * Not random — ties results to crops they actually planted.
+ * Used as a fallback if API is unavailable.
  */
 async function diagnoseFromUserCrops(
   imageUri: string,
   user: User,
 ): Promise<DiagnosisResult> {
-  await mockDelay(ANALYSIS_DELAY_MS);
-
   const cropName = await getPrimaryCropForUser(user);
 
   if (!cropName) {
@@ -67,20 +62,16 @@ async function apiDiagnoseCrop(imageUri: string): Promise<DiagnosisResult> {
 }
 
 /**
- * Send crop image for AI diagnosis.
- * Local mode uses the farmer's real crop records — not random mock data.
+ * Send crop image for AI diagnosis via backend API.
  */
 export async function diagnoseCropImage(
   imageUri: string,
   user: User,
 ): Promise<DiagnosisResult> {
-  if (env.useMockApi) {
-    return diagnoseFromUserCrops(imageUri, user);
-  }
-
   try {
     return await apiDiagnoseCrop(imageUri);
   } catch {
+    // Fallback: use farmer's registered crops
     return diagnoseFromUserCrops(imageUri, user);
   }
 }

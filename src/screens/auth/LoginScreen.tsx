@@ -57,10 +57,6 @@ export function LoginScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Register')}
           fullWidth
         />
-
-        <Text style={styles.hint}>
-          Demo: farmer@verdora.com / admin@verdora.com — password: verdora123
-        </Text>
       </KeyboardAvoidingView>
     </ScreenWrapper>
   );

@@ -10,7 +10,7 @@ interface ScreenHeaderProps {
   rightAction?: { label: string; onPress: () => void };
 }
 
-export function ScreenHeader({ title, subtitle, showBack, rightAction }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, showBack = true, rightAction }: ScreenHeaderProps) {
   const navigation = useNavigation();
 
   return (

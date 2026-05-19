@@ -106,23 +106,22 @@ async function apiSendMessage(request: ChatRequest): Promise<ChatResponse> {
 }
 
 export async function sendChatMessage(user: User, request: ChatRequest): Promise<ChatResponse> {
-  if (env.geminiApiKey && !env.useMockApi) {
+  // Try Gemini first if configured
+  if (env.geminiApiKey) {
     try {
       return await geminiSendMessage(request, user);
     } catch {
-      // fall through
+      // fall through to API
     }
   }
 
-  if (!env.useMockApi) {
-    try {
-      return await apiSendMessage(request);
-    } catch {
-      // fall through
-    }
+  // Try backend API
+  try {
+    return await apiSendMessage(request);
+  } catch {
+    // Fallback to local
+    return localSendMessage(user, request);
   }
-
-  return localSendMessage(user, request);
 }
 
 const chatKey = (userId: string) => `@verdora_chat_${userId}`;

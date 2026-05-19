@@ -15,6 +15,7 @@ export function FarmerNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        gestureEnabled: true,
         contentStyle: { backgroundColor: colors.background },
       }}
     >
