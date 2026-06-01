@@ -1,0 +1,70 @@
+import React from 'react';
+import { Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HomeScreen } from '../screens/farmer/HomeScreen';
+import { CropScannerScreen } from '../screens/farmer/CropScannerScreen';
+import { PlantationCalendarScreen } from '../screens/farmer/PlantationCalendarScreen';
+import { WeatherScreen } from '../screens/farmer/WeatherScreen';
+import { ChatScreen } from '../screens/farmer/ChatScreen';
+import { ProfileScreen } from '../screens/farmer/ProfileScreen';
+import { colors } from '../constants/theme';
+import type { FarmerTabParamList } from './types';
+
+const Tab = createBottomTabNavigator<FarmerTabParamList>();
+
+type TabIconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const TAB_ICONS: Record<keyof FarmerTabParamList, { active: TabIconName; inactive: TabIconName }> = {
+  Home: { active: 'home', inactive: 'home-outline' },
+  Scanner: { active: 'camera', inactive: 'camera-outline' },
+  Calendar: { active: 'calendar', inactive: 'calendar-outline' },
+  Weather: { active: 'partly-sunny', inactive: 'partly-sunny-outline' },
+  Chat: { active: 'chatbubbles', inactive: 'chatbubbles-outline' },
+  Profile: { active: 'person', inactive: 'person-outline' },
+};
+
+function TabIcon({ routeName, focused }: { routeName: keyof FarmerTabParamList; focused: boolean }) {
+  const icon = TAB_ICONS[routeName][focused ? 'active' : 'inactive'];
+  return (
+    <Ionicons
+      name={icon}
+      size={focused ? 24 : 22}
+      color={focused ? colors.primary : colors.textMuted}
+    />
+  );
+}
+
+export function FarmerTabNavigator() {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 56 + Math.max(insets.bottom, Platform.OS === 'web' ? 8 : 0);
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => (
+          <TabIcon routeName={route.name} focused={focused} />
+        ),
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          paddingTop: 6,
+          height: tabBarHeight,
+          paddingBottom: Math.max(insets.bottom, 8),
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 2 },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Hub' }} />
+      <Tab.Screen name="Scanner" component={CropScannerScreen} options={{ title: 'Scan' }} />
+      <Tab.Screen name="Calendar" component={PlantationCalendarScreen} options={{ title: 'Calendar' }} />
+      <Tab.Screen name="Weather" component={WeatherScreen} options={{ title: 'Weather' }} />
+      <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+    </Tab.Navigator>
+  );
+}

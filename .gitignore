@@ -2,12 +2,15 @@
 
 # dependencies
 node_modules/
+frontend/node_modules/
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+# Expo (frontend)
+frontend/.expo/
+frontend/.expo-tmp-export/
+frontend/dist/
+frontend/web-build/
+frontend/expo-env.d.ts
+
 
 # Native
 .kotlin/
