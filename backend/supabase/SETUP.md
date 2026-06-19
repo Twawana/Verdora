@@ -2,6 +2,9 @@
 
 Use this guide when provisioning a **fresh** Supabase database for Verdora.
 
+**Current project:** `https://wfkciaoxqqwleybyvisp.supabase.co`  
+Dashboard: [supabase.com/dashboard/project/wfkciaoxqqwleybyvisp](https://supabase.com/dashboard/project/wfkciaoxqqwleybyvisp)
+
 ## 1. Create the project
 
 1. Go to [supabase.com/dashboard](https://supabase.com/dashboard) and create a new project.
@@ -15,11 +18,21 @@ Use this guide when provisioning a **fresh** Supabase database for Verdora.
 
 ## 3. Run the schema
 
+**Option A — one file (recommended)**
+
 1. Open **SQL Editor → New query**.
 2. Paste the full contents of [`schema.sql`](schema.sql).
 3. Click **Run**.
 
-This single script creates all tables, PostGIS functions, auth triggers, and Row Level Security policies. You do **not** need the older `migrations/002_*` or `003_*` files on a new project.
+**Option B — step by step**
+
+Run in order in the SQL Editor:
+
+1. [`migrations/001_core_tables.sql`](migrations/001_core_tables.sql)
+2. [`migrations/002_intelligence_platform.sql`](migrations/002_intelligence_platform.sql)
+3. [`migrations/003_rls_and_auth.sql`](migrations/003_rls_and_auth.sql)
+
+Both options produce the same database. Use Option B if you want to inspect each layer as it is created.
 
 ### What gets created
 
@@ -49,7 +62,7 @@ This single script creates all tables, PostGIS functions, auth triggers, and Row
 3. Set in `frontend/.env`:
 
    ```
-   EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+   EXPO_PUBLIC_SUPABASE_URL=https://wfkciaoxqqwleybyvisp.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
    ```
 
@@ -63,7 +76,7 @@ This single script creates all tables, PostGIS functions, auth triggers, and Row
 ## 5. Create an admin account (optional)
 
 1. Register a farmer account in the app (or via **Authentication → Users** in Supabase).
-2. In SQL Editor, promote that user:
+2. In SQL Editor, run [`seed_admin.sql`](seed_admin.sql) (edit the email first), or:
 
    ```sql
    update public.users
@@ -83,7 +96,7 @@ The function uses the **service role** key and bypasses RLS to write `disease_al
 
 | Error | Fix |
 |-------|-----|
-| `permission denied for table crops` | Re-run the RLS/grant section at the bottom of `schema.sql`, or run [`fix_permissions.sql`](fix_permissions.sql) **only on legacy databases** — new installs should not need it. |
+| `permission denied for table crops` | Run [`fix_permissions.sql`](fix_permissions.sql) to re-apply grants and RLS. |
 | `relation "fields" does not exist` | You ran an old partial schema. Drop the `public` tables and re-run `schema.sql` on a fresh project. |
 | Signup works but profile missing | Check the `on_auth_user_created` trigger exists; the app also upserts via `usersRepository`. |
 | Admin dashboard empty | Log in as a user with `role = 'admin'`; farmers only see their own rows. |

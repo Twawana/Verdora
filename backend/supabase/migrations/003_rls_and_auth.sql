@@ -1,8 +1,4 @@
--- Verdora — repair grants, triggers, and RLS policies
--- Run when you see "permission denied" or after changing auth settings.
--- Project: https://wfkciaoxqqwleybyvisp.supabase.co
--- Safe to re-run. Requires tables from schema.sql (or migrations 001 + 002).
-
+-- Verdora 003 — auth trigger, updated_at automation, RLS policies
 -- Run after 001_core_tables.sql and 002_intelligence_platform.sql
 -- Safe to re-run: drops policies before recreating them.
 

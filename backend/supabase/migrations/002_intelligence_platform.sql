@@ -1,12 +1,10 @@
--- DEPRECATED: merged into schema.sql — do not run on new projects
-
--- Verdora intelligence platform — disease alerts, knowledge gaps, planting insights
--- Requires PostGIS for geospatial outbreak clustering.
--- Run after schema.sql in Supabase SQL Editor.
+-- Verdora 002 — regional intelligence (PostGIS)
+-- Run after 001_core_tables.sql
+-- Safe to re-run: uses IF NOT EXISTS throughout.
 
 create extension if not exists postgis;
 
--- ─── DISEASE ALERTS (geospatial outbreak clusters) ───
+-- ─── DISEASE ALERTS ───
 create table if not exists public.disease_alerts (
   id text primary key,
   disease text not null,
@@ -32,29 +30,7 @@ create index if not exists idx_disease_alerts_active on public.disease_alerts (a
 create index if not exists idx_disease_alerts_disease on public.disease_alerts (disease);
 create index if not exists idx_disease_alerts_center on public.disease_alerts using gist (center);
 
--- Find alerts within radius of a farmer location (km)
-create or replace function public.disease_alerts_near(
-  farmer_lat double precision,
-  farmer_lng double precision,
-  max_km double precision default 50
-)
-returns setof public.disease_alerts
-language sql
-stable
-as $$
-  select *
-  from public.disease_alerts
-  where active = true
-    and (expires_at is null or expires_at > now())
-    and st_dwithin(
-      center,
-      st_setsrid(st_makepoint(farmer_lng, farmer_lat), 4326)::geography,
-      max_km * 1000
-    )
-  order by scan_count desc, detected_at desc;
-$$;
-
--- ─── KNOWLEDGE GAP REPORTS (chat topic clusters by region) ───
+-- ─── KNOWLEDGE GAP REPORTS ───
 create table if not exists public.knowledge_gap_reports (
   id text primary key,
   topic text not null,
@@ -72,7 +48,7 @@ create table if not exists public.knowledge_gap_reports (
 create index if not exists idx_knowledge_gap_region on public.knowledge_gap_reports (region, question_count desc);
 create index if not exists idx_knowledge_gap_topic on public.knowledge_gap_reports (topic);
 
--- ─── PLANTING INSIGHTS (calendar + weather aggregation) ───
+-- ─── PLANTING INSIGHTS ───
 create table if not exists public.planting_insights (
   id text primary key,
   crop_name text not null,
@@ -104,22 +80,27 @@ create table if not exists public.aggregation_runs (
   finished_at timestamptz
 );
 
-alter table public.disease_alerts enable row level security;
-alter table public.knowledge_gap_reports enable row level security;
-alter table public.planting_insights enable row level security;
-alter table public.aggregation_runs enable row level security;
+-- ─── Geospatial query helper ───
+create or replace function public.disease_alerts_near(
+  farmer_lat double precision,
+  farmer_lng double precision,
+  max_km double precision default 50
+)
+returns setof public.disease_alerts
+language sql
+stable
+as $$
+  select *
+  from public.disease_alerts
+  where active = true
+    and (expires_at is null or expires_at > now())
+    and st_dwithin(
+      center,
+      st_setsrid(st_makepoint(farmer_lng, farmer_lat), 4326)::geography,
+      max_km * 1000
+    )
+  order by scan_count desc, detected_at desc;
+$$;
 
-grant select, insert, update, delete on public.disease_alerts to anon, authenticated;
-grant select, insert, update, delete on public.knowledge_gap_reports to anon, authenticated;
-grant select, insert, update, delete on public.planting_insights to anon, authenticated;
-grant select, insert, update, delete on public.aggregation_runs to anon, authenticated;
-
--- Development policies (replace with auth.uid() policies in production)
-create policy "Allow anon disease_alerts" on public.disease_alerts for all to anon, authenticated using (true) with check (true);
-create policy "Allow anon knowledge_gaps" on public.knowledge_gap_reports for all to anon, authenticated using (true) with check (true);
-create policy "Allow anon planting_insights" on public.planting_insights for all to anon, authenticated using (true) with check (true);
-create policy "Allow anon aggregation_runs" on public.aggregation_runs for all to anon, authenticated using (true) with check (true);
-
--- Geospatial index on scans for aggregation queries
-create index if not exists idx_scans_disease_geo on public.scans (disease, scanned_at desc)
-  where disease is not null and latitude is not null and longitude is not null;
+grant execute on function public.disease_alerts_near(double precision, double precision, double precision)
+  to anon, authenticated;

@@ -10,7 +10,8 @@ Quick version:
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Enable **Email** auth
-3. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL Editor
+3. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL Editor  
+   — or run migrations `001` → `002` → `003` in order (see [migrations/README.md](supabase/migrations/README.md))
 4. Copy URL + anon key into `frontend/.env`
 
 ## Tables
@@ -42,4 +43,11 @@ Deploy: [supabase/functions/README.md](supabase/functions/README.md)
 
 ## Legacy migrations
 
-Older partial migrations in `supabase/migrations/` are deprecated. Use `schema.sql` only for new databases — see [supabase/migrations/README.md](supabase/migrations/README.md).
+Numbered migrations in `supabase/migrations/` mirror `schema.sql` in three steps. See [supabase/migrations/README.md](supabase/migrations/README.md).
+
+Utility scripts:
+
+| File | Purpose |
+|------|---------|
+| [`fix_permissions.sql`](supabase/fix_permissions.sql) | Re-apply grants + RLS (safe to re-run) |
+| [`seed_admin.sql`](supabase/seed_admin.sql) | Promote a user to admin by email |

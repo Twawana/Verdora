@@ -194,6 +194,47 @@ create table if not exists public.aggregation_runs (
   finished_at timestamptz
 );
 
+-- ─── updated_at automation ───
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_users_updated_at on public.users;
+create trigger trg_users_updated_at
+  before update on public.users
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_fields_updated_at on public.fields;
+create trigger trg_fields_updated_at
+  before update on public.fields
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_crops_updated_at on public.crops;
+create trigger trg_crops_updated_at
+  before update on public.crops
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_disease_alerts_updated_at on public.disease_alerts;
+create trigger trg_disease_alerts_updated_at
+  before update on public.disease_alerts
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_knowledge_gap_updated_at on public.knowledge_gap_reports;
+create trigger trg_knowledge_gap_updated_at
+  before update on public.knowledge_gap_reports
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_planting_insights_updated_at on public.planting_insights;
+create trigger trg_planting_insights_updated_at
+  before update on public.planting_insights
+  for each row execute function public.set_updated_at();
+
 -- ─── Helpers ───
 create or replace function public.is_admin()
 returns boolean
@@ -254,6 +295,17 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Backfill profiles for auth users created before the trigger existed
+insert into public.users (id, email, name, role)
+select
+  au.id,
+  coalesce(au.email, ''),
+  coalesce(au.raw_user_meta_data->>'name', 'Farmer'),
+  'farmer'
+from auth.users au
+left join public.users pu on pu.id = au.id
+where pu.id is null;
+
 -- ─── Row Level Security ───
 alter table public.users enable row level security;
 alter table public.fields enable row level security;
@@ -308,6 +360,34 @@ drop policy if exists "Allow anon disease_alerts" on public.disease_alerts;
 drop policy if exists "Allow anon knowledge_gaps" on public.knowledge_gap_reports;
 drop policy if exists "Allow anon planting_insights" on public.planting_insights;
 drop policy if exists "Allow anon aggregation_runs" on public.aggregation_runs;
+
+drop policy if exists "Users read own profile or admin reads all" on public.users;
+drop policy if exists "Users insert own profile" on public.users;
+drop policy if exists "Users update own profile or admin updates all" on public.users;
+drop policy if exists "Owner or admin select fields" on public.fields;
+drop policy if exists "Owner insert fields" on public.fields;
+drop policy if exists "Owner or admin update fields" on public.fields;
+drop policy if exists "Owner or admin delete fields" on public.fields;
+drop policy if exists "Owner or admin select crops" on public.crops;
+drop policy if exists "Owner insert crops" on public.crops;
+drop policy if exists "Owner or admin update crops" on public.crops;
+drop policy if exists "Owner or admin delete crops" on public.crops;
+drop policy if exists "Owner or admin select scans" on public.scans;
+drop policy if exists "Owner insert scans" on public.scans;
+drop policy if exists "Owner or admin update scans" on public.scans;
+drop policy if exists "Owner or admin delete scans" on public.scans;
+drop policy if exists "Owner or admin select weather_logs" on public.weather_logs;
+drop policy if exists "Owner insert weather_logs" on public.weather_logs;
+drop policy if exists "Owner or admin update weather_logs" on public.weather_logs;
+drop policy if exists "Owner or admin delete weather_logs" on public.weather_logs;
+drop policy if exists "Owner or admin select chat_logs" on public.chat_logs;
+drop policy if exists "Owner insert chat_logs" on public.chat_logs;
+drop policy if exists "Owner or admin update chat_logs" on public.chat_logs;
+drop policy if exists "Owner or admin delete chat_logs" on public.chat_logs;
+drop policy if exists "Authenticated read disease_alerts" on public.disease_alerts;
+drop policy if exists "Authenticated read knowledge_gap_reports" on public.knowledge_gap_reports;
+drop policy if exists "Authenticated read planting_insights" on public.planting_insights;
+drop policy if exists "Admin read aggregation_runs" on public.aggregation_runs;
 
 -- users
 create policy "Users read own profile or admin reads all"
