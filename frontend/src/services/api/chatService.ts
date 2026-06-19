@@ -3,7 +3,7 @@ import { hasRestApi, env } from '../../config/env';
 import type { ChatMessage, User } from '../../types';
 import { generateId } from '../../utils/generateId';
 import { getUserCropScans, getUserFarmingRecords } from '../analytics/dataCollectionService';
-import { API_ENDPOINTS, EXTERNAL_APIS } from './endpoints';
+import { API_ENDPOINTS, CLAUDE_CHAT_MODEL, EXTERNAL_APIS } from './endpoints';
 import { apiPost, externalClient } from './client';
 import type { ChatRequest, ChatResponse } from './types';
 
@@ -62,33 +62,51 @@ async function localSendMessage(user: User, request: ChatRequest): Promise<ChatR
   };
 }
 
-async function geminiSendMessage(request: ChatRequest, user: User): Promise<ChatResponse> {
-  const { geminiApiKey } = env;
-  if (!geminiApiKey) throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not set');
-
+function buildClaudeSystemPrompt(user: User): string {
   const crops = user.cropsPlanted?.join(', ') ?? 'unknown';
-  const systemPrompt =
-    `You are Verdora, an agriculture assistant. The farmer is in ${user.location ?? 'unknown location'}. ` +
-    `They grow: ${crops}. Farm type: ${user.farmerType ?? 'unspecified'}. ` +
-    `Give practical, concise advice using their real farm context.`;
+  return (
+    `You are Verdora, an agriculture assistant powered by Claude. ` +
+    `The farmer is in ${user.location ?? 'unknown location'}. They grow: ${crops}. ` +
+    `Farm type: ${user.farmerType ?? 'unspecified'}. ` +
+    `Soil: ${user.soilType ?? 'unspecified'}. ` +
+    `Give practical, concise advice using their real farm context. ` +
+    `When unsure, suggest checking the Weather tab or scanning affected plants.`
+  );
+}
 
-  const contents = [
+async function claudeSendMessage(request: ChatRequest, user: User): Promise<ChatResponse> {
+  const { claudeApiKey } = env;
+  if (!claudeApiKey) throw new Error('EXPO_PUBLIC_CLAUDE_API_KEY is not set');
+
+  const messages = [
     ...(request.history ?? []).map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
     })),
-    { role: 'user', parts: [{ text: request.message }] },
+    { role: 'user' as const, content: request.message },
   ];
 
   const { data } = await externalClient.post(
-    `${EXTERNAL_APIS.gemini}?key=${geminiApiKey}`,
-    { systemInstruction: { parts: [{ text: systemPrompt }] }, contents },
-    { headers: { 'Content-Type': 'application/json' } },
+    EXTERNAL_APIS.claude,
+    {
+      model: CLAUDE_CHAT_MODEL,
+      max_tokens: 1024,
+      system: buildClaudeSystemPrompt(user),
+      messages,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': claudeApiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+    },
   );
 
   const text =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-    'I could not generate a response. Please try again.';
+    data?.content?.find((block: { type: string; text?: string }) => block.type === 'text')
+      ?.text ?? 'I could not generate a response. Please try again.';
 
   return {
     reply: {
@@ -105,9 +123,9 @@ async function apiSendMessage(request: ChatRequest): Promise<ChatResponse> {
 }
 
 export async function sendChatMessage(user: User, request: ChatRequest): Promise<ChatResponse> {
-  if (env.geminiApiKey) {
+  if (env.claudeApiKey) {
     try {
-      return await geminiSendMessage(request, user);
+      return await claudeSendMessage(request, user);
     } catch {
       // fall through
     }

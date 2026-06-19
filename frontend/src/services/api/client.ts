@@ -67,7 +67,7 @@ export async function apiDelete<T>(url: string, config?: AxiosRequestConfig): Pr
   return data;
 }
 
-/** Standalone client for third-party APIs (OpenWeather, Gemini) */
+/** Standalone client for third-party APIs (OpenWeather, Claude, Gemini) */
 export const externalClient = axios.create({ timeout: 15000 });
 
 externalClient.interceptors.response.use(

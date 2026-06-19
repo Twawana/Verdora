@@ -12,7 +12,13 @@ export const env = {
   /** Base URL for Verdora REST API (optional if using Supabase Auth + data) */
   apiUrl: apiUrl.trim(),
 
+  /** OpenWeather — live forecasts in Weather tab */
   openWeatherApiKey: process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY ?? '',
+
+  /** Claude (Anthropic) — AI chat assistant */
+  claudeApiKey: process.env.EXPO_PUBLIC_CLAUDE_API_KEY ?? '',
+
+  /** Gemini — crop scan / disease analysis (vision) */
   geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '',
 
   /** Supabase — required for auth and cloud data sync */

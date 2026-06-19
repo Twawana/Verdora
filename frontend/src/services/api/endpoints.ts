@@ -31,7 +31,7 @@ export const API_ENDPOINTS = {
     plantingRecommendations: '/api/v1/weather/planting-recommendations',
   },
 
-  // AI chatbot (Gemini proxy on backend, or direct from client)
+  // AI chatbot (Claude via client, or REST proxy)
   chat: {
     message: '/api/v1/chat/message',
     sessions: '/api/v1/chat/sessions',
@@ -49,5 +49,10 @@ export const API_ENDPOINTS = {
 /** Third-party APIs (called directly when keys are set) */
 export const EXTERNAL_APIS = {
   openWeather: 'https://api.openweathermap.org/data/2.5/weather',
-  gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+  claude: 'https://api.anthropic.com/v1/messages',
+  geminiVision:
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
 } as const;
+
+/** Claude model for the farming chat assistant */
+export const CLAUDE_CHAT_MODEL = 'claude-sonnet-4-20250514';

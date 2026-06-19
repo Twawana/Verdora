@@ -52,5 +52,6 @@ Copy `frontend/.env.example` to `frontend/.env`. Required:
 Optional:
 
 - `EXPO_PUBLIC_API_URL` — custom REST backend
-- `EXPO_PUBLIC_OPENWEATHER_API_KEY` — live weather
-- `EXPO_PUBLIC_GEMINI_API_KEY` — AI chat assistant
+- `EXPO_PUBLIC_OPENWEATHER_API_KEY` — live weather (OpenWeather)
+- `EXPO_PUBLIC_CLAUDE_API_KEY` — AI chat assistant (Claude)
+- `EXPO_PUBLIC_GEMINI_API_KEY` — crop scan analysis (Gemini vision)

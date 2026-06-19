@@ -43,9 +43,22 @@ From the repo root you can run the same scripts via `npm start`, `npm run start:
 ## Deployment setup
 
 1. Copy `.env.example` to `.env` and set your **Supabase URL and anon key** (required).
-2. Optionally set `EXPO_PUBLIC_OPENWEATHER_API_KEY` and `EXPO_PUBLIC_GEMINI_API_KEY`.
+2. Set API keys for the features you want:
+   - `EXPO_PUBLIC_OPENWEATHER_API_KEY` — Weather tab
+   - `EXPO_PUBLIC_CLAUDE_API_KEY` — Chat assistant (Claude)
+   - `EXPO_PUBLIC_GEMINI_API_KEY` — Crop scanner (Gemini vision)
 3. Optionally set `EXPO_PUBLIC_API_URL` if you deploy a separate REST backend.
 4. Users register and sign in with real accounts via **Supabase Auth** (no demo credentials).
+
+## AI & weather providers
+
+| Feature | Provider | Env variable |
+|---------|----------|--------------|
+| Chat assistant | Claude (Anthropic) | `EXPO_PUBLIC_CLAUDE_API_KEY` |
+| Crop scan analysis | Gemini (Google) | `EXPO_PUBLIC_GEMINI_API_KEY` |
+| Live weather | OpenWeather | `EXPO_PUBLIC_OPENWEATHER_API_KEY` |
+
+Without keys, chat and scans fall back to local heuristics; weather uses cached logs or prompts you to set a location.
 
 ## Run on a physical iPhone (Expo Go)
 

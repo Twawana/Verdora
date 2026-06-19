@@ -1,12 +1,85 @@
-import { hasRestApi } from '../../config/env';
+import { env, hasRestApi } from '../../config/env';
 import { CROP_KNOWLEDGE, DEFAULT_CROP_KNOWLEDGE } from '../../data/cropKnowledge';
 import type { DiagnosisResult, User } from '../../types';
 import { generateId } from '../../utils/generateId';
+import { mimeTypeFromUri, readImageAsBase64 } from '../../utils/readImageBase64';
 import { getPrimaryCropForUser, scanRecordToDiagnosis } from '../data/farmerDataService';
 import { getUserCropScans } from '../analytics/dataCollectionService';
-import { API_ENDPOINTS } from './endpoints';
-import { apiClient } from './client';
+import { API_ENDPOINTS, EXTERNAL_APIS } from './endpoints';
+import { apiClient, externalClient } from './client';
 import type { DiagnoseCropResponse } from './types';
+
+interface GeminiDiagnosisPayload {
+  cropName?: string;
+  disease?: string | null;
+  confidence?: number;
+  treatment?: string;
+}
+
+function parseGeminiDiagnosis(raw: string): GeminiDiagnosisPayload | null {
+  const trimmed = raw.trim();
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+
+  try {
+    return JSON.parse(jsonMatch[0]) as GeminiDiagnosisPayload;
+  } catch {
+    return null;
+  }
+}
+
+function buildGeminiScanPrompt(user: User): string {
+  const crops = user.cropsPlanted?.join(', ') ?? 'unknown';
+  return (
+    `You are Verdora crop disease analyst using Gemini vision. ` +
+    `Farmer location: ${user.location ?? 'unknown'}. Registered crops: ${crops}. ` +
+    `Analyze this crop photo. Identify the crop and any visible disease or pest damage. ` +
+    `Respond ONLY with valid JSON (no markdown fences): ` +
+    `{"cropName":"string","disease":"string or null if healthy","confidence":0.0,"treatment":"actionable advice"}`
+  );
+}
+
+async function geminiDiagnoseCrop(imageUri: string, user: User): Promise<DiagnosisResult> {
+  const { geminiApiKey } = env;
+  if (!geminiApiKey) throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not set');
+
+  const base64 = await readImageAsBase64(imageUri);
+  const mimeType = mimeTypeFromUri(imageUri);
+
+  const { data } = await externalClient.post(
+    `${EXTERNAL_APIS.geminiVision}?key=${geminiApiKey}`,
+    {
+      contents: [
+        {
+          parts: [
+            { text: buildGeminiScanPrompt(user) },
+            { inline_data: { mime_type: mimeType, data: base64 } },
+          ],
+        },
+      ],
+    },
+    { headers: { 'Content-Type': 'application/json' } },
+  );
+
+  const rawText: string =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+    'Unable to analyze image.';
+
+  const parsed = parseGeminiDiagnosis(rawText);
+  const fallbackCrop = (await getPrimaryCropForUser(user)) ?? 'Unknown crop';
+
+  return {
+    id: generateId('diag'),
+    cropName: parsed?.cropName?.trim() || fallbackCrop,
+    disease: parsed?.disease ?? null,
+    confidence: Math.min(1, Math.max(0, parsed?.confidence ?? 0.75)),
+    treatment:
+      parsed?.treatment?.trim() ||
+      'Monitor the plant and scan again in a few days if symptoms persist.',
+    imageUri,
+    scannedAt: new Date().toISOString(),
+  };
+}
 
 async function apiDiagnoseCrop(imageUri: string): Promise<DiagnosisResult> {
   const formData = new FormData();
@@ -25,7 +98,7 @@ async function apiDiagnoseCrop(imageUri: string): Promise<DiagnosisResult> {
 }
 
 /**
- * Client-side fallback when the diagnosis API is unavailable.
+ * Client-side fallback when Gemini and the diagnosis API are unavailable.
  * Uses the farmer's registered crops — not fabricated sample data.
  */
 async function diagnoseFromUserCrops(
@@ -66,6 +139,14 @@ export async function diagnoseCropImage(
   imageUri: string,
   user: User,
 ): Promise<DiagnosisResult> {
+  if (env.geminiApiKey) {
+    try {
+      return await geminiDiagnoseCrop(imageUri, user);
+    } catch {
+      // fall through
+    }
+  }
+
   if (hasRestApi) {
     try {
       return await apiDiagnoseCrop(imageUri);

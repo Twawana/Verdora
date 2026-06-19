@@ -37,7 +37,7 @@ export interface WeatherData {
   recommendation?: string;
 }
 
-/** Chat message for Gemini farming assistant */
+/** Chat message for Claude farming assistant */
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
