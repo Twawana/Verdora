@@ -6,17 +6,25 @@ Agricultural intelligence platform — crop scanning, plantation calendar, weath
 
 ```
 Verdora/
-├── frontend/          # Expo (React Native) mobile app
-├── backend/           # Supabase schema & data architecture docs
-├── AGENTS.md          # Agent / Expo SDK notes
-└── package.json       # Workspace root (runs frontend scripts)
+├── frontend/              # Expo (React Native) mobile app
+├── supabase/              # ← SQL schema, migrations, Edge Functions
+│   ├── schema.sql         # run this in Supabase SQL Editor
+│   ├── migrations/
+│   │   ├── 001_core_tables.sql
+│   │   ├── 002_intelligence_platform.sql
+│   │   └── 003_rls_and_auth.sql
+│   ├── fix_permissions.sql
+│   └── seed_admin.sql
+├── backend/               # Data architecture docs
+├── AGENTS.md
+└── package.json
 ```
 
 ## Quick start
 
-1. **Backend (Supabase)** — see [backend/supabase/SETUP.md](backend/supabase/SETUP.md)
+1. **Backend (Supabase)** — see [supabase/SETUP.md](supabase/SETUP.md)
    - Create a **new** Supabase project
-   - Run `backend/supabase/schema.sql` once in the SQL Editor
+   - Run [supabase/schema.sql](supabase/schema.sql) once in the SQL Editor
    - Enable **Email** auth in Supabase Authentication settings
 
 2. **Frontend (Expo app)**

@@ -2,16 +2,18 @@
 
 Cloud data layer for Verdora. The mobile app uses **Supabase** (PostgreSQL + Auth) with Row Level Security tied to `auth.uid()`.
 
+**All SQL files live in [`../supabase/`](../supabase/)** at the repo root (standard Supabase layout).
+
 ## New Supabase project
 
-Follow **[supabase/SETUP.md](supabase/SETUP.md)** — create a project, run one SQL file, connect the app.
+Follow **[../supabase/SETUP.md](../supabase/SETUP.md)** — create a project, run one SQL file, connect the app.
 
 Quick version:
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Enable **Email** auth
-3. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL Editor  
-   — or run migrations `001` → `002` → `003` in order (see [migrations/README.md](supabase/migrations/README.md))
+3. Run [`../supabase/schema.sql`](../supabase/schema.sql) in the SQL Editor  
+   — or run migrations `001` → `002` → `003` in order (see [../supabase/migrations/README.md](../supabase/migrations/README.md))
 4. Copy URL + anon key into `frontend/.env`
 
 ## Tables
@@ -39,15 +41,11 @@ See [docs/DATA_ARCHITECTURE.md](docs/DATA_ARCHITECTURE.md) for collection flow, 
 
 - `nightly-aggregation` — clusters disease scans, knowledge gaps, planting insights (cron: `0 2 * * *`)
 
-Deploy: [supabase/functions/README.md](supabase/functions/README.md)
+Deploy: [../supabase/functions/README.md](../supabase/functions/README.md)
 
-## Legacy migrations
-
-Numbered migrations in `supabase/migrations/` mirror `schema.sql` in three steps. See [supabase/migrations/README.md](supabase/migrations/README.md).
-
-Utility scripts:
+## Utility SQL
 
 | File | Purpose |
 |------|---------|
-| [`fix_permissions.sql`](supabase/fix_permissions.sql) | Re-apply grants + RLS (safe to re-run) |
-| [`seed_admin.sql`](supabase/seed_admin.sql) | Promote a user to admin by email |
+| [`../supabase/fix_permissions.sql`](../supabase/fix_permissions.sql) | Re-apply grants + RLS (safe to re-run) |
+| [`../supabase/seed_admin.sql`](../supabase/seed_admin.sql) | Promote a user to admin by email |

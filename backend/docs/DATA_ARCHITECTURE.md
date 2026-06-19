@@ -13,9 +13,9 @@ Verdora is designed as an **agricultural intelligence & data collection platform
 
 ## Database Schema
 
-Complete schema for a new project: `backend/supabase/schema.sql` (includes PostGIS intelligence tables and multi-plot `fields`).
+Complete schema for a new project: `supabase/schema.sql` (includes PostGIS intelligence tables and multi-plot `fields`).
 
-Setup guide: `backend/supabase/SETUP.md`
+Setup guide: `supabase/SETUP.md`
 
 | Table | Purpose | Key fields |
 |-------|---------|------------|
@@ -49,8 +49,8 @@ The app aggregates intelligence client-side from real user data; production also
 ## Setup Supabase
 
 1. Create a new project at [supabase.com](https://supabase.com)
-2. Run `backend/supabase/schema.sql` once (see `backend/supabase/SETUP.md`)
-3. Deploy Edge Function: see `backend/supabase/functions/README.md`
+2. Run `supabase/schema.sql` once (see `supabase/SETUP.md`)
+3. Deploy Edge Function: see `supabase/functions/README.md`
 4. Add to `frontend/.env`:
    ```
    EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
