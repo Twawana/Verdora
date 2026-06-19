@@ -14,9 +14,9 @@ Verdora/
 
 ## Quick start
 
-1. **Backend (Supabase)** — see [backend/README.md](backend/README.md)
-   - Create a Supabase project
-   - Run `backend/supabase/schema.sql` and migrations in the SQL editor
+1. **Backend (Supabase)** — see [backend/supabase/SETUP.md](backend/supabase/SETUP.md)
+   - Create a **new** Supabase project
+   - Run `backend/supabase/schema.sql` once in the SQL Editor
    - Enable **Email** auth in Supabase Authentication settings
 
 2. **Frontend (Expo app)**

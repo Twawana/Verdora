@@ -1,3 +1,5 @@
+-- DEPRECATED: merged into schema.sql — do not run on new projects
+
 -- Verdora intelligence platform — disease alerts, knowledge gaps, planting insights
 -- Requires PostGIS for geospatial outbreak clustering.
 -- Run after schema.sql in Supabase SQL Editor.

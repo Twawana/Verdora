@@ -1,3 +1,5 @@
+-- DEPRECATED: merged into schema.sql — do not run on new projects
+
 -- Multi-plot farms: first-class fields table
 -- Run in Supabase SQL Editor after schema.sql
 

@@ -1,5 +1,6 @@
--- Fix Supabase "permission denied for table crops/scans" errors
--- Run this in Supabase SQL Editor if cloud sync or export fails
+-- LEGACY: Fix "permission denied" on OLD databases with open anon policies.
+-- New projects use auth-based RLS in schema.sql — you should not need this file.
+-- Run this in Supabase SQL Editor only if cloud sync fails on a legacy database.
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on all tables in schema public to anon, authenticated;

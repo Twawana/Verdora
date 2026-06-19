@@ -1,33 +1,34 @@
 # Verdora Backend
 
-Cloud data layer for Verdora. The mobile app uses **Supabase** (PostgreSQL + Auth) with Row Level Security.
+Cloud data layer for Verdora. The mobile app uses **Supabase** (PostgreSQL + Auth) with Row Level Security tied to `auth.uid()`.
 
-## Setup
+## New Supabase project
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run:
-   - [`supabase/schema.sql`](supabase/schema.sql)
-   - [`supabase/migrations/002_intelligence_platform.sql`](supabase/migrations/002_intelligence_platform.sql)
-3. Deploy nightly aggregation: [`supabase/functions/README.md`](supabase/functions/README.md)
-4. Copy your project URL and anon key into `frontend/.env`:
-   ```
-   EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-   ```
+Follow **[supabase/SETUP.md](supabase/SETUP.md)** — create a project, run one SQL file, connect the app.
 
-## Tables (all linked by `user_id`)
+Quick version:
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Enable **Email** auth
+3. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL Editor
+4. Copy URL + anon key into `frontend/.env`
+
+## Tables
 
 | Table | Purpose |
 |-------|---------|
-| `users` | Profiles, location, consent |
+| `users` | Profiles linked to Supabase Auth (`auth.users`) |
+| `fields` | Multi-plot farm locations |
 | `crops` | Planting / harvest activity |
 | `scans` | Crop diagnosis events |
-| `weather_logs` | Weather & recommendations |
+| `weather_logs` | Weather and recommendations |
 | `chat_logs` | Farmer questions (optional AI responses) |
 | `disease_alerts` | Geospatial disease outbreak clusters |
 | `knowledge_gap_reports` | Chat topic gaps by region |
 | `planting_insights` | Planting window optimization |
 | `aggregation_runs` | Nightly job audit log |
+
+Farmer data is scoped by `user_id`. Admins (`role = 'admin'`) can read all farmer tables for the dashboard.
 
 ## Architecture
 
@@ -36,3 +37,9 @@ See [docs/DATA_ARCHITECTURE.md](docs/DATA_ARCHITECTURE.md) for collection flow, 
 ## Edge Functions
 
 - `nightly-aggregation` — clusters disease scans, knowledge gaps, planting insights (cron: `0 2 * * *`)
+
+Deploy: [supabase/functions/README.md](supabase/functions/README.md)
+
+## Legacy migrations
+
+Older partial migrations in `supabase/migrations/` are deprecated. Use `schema.sql` only for new databases — see [supabase/migrations/README.md](supabase/migrations/README.md).
