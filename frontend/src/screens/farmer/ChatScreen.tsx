@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatBubble } from '../../components/chat/ChatBubble';
+import { ScreenHeader } from '../../components/navigation/ScreenHeader';
+import { ScreenLoader } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import { trackChatQuestion } from '../../services/analytics/dataCollectionService';
@@ -26,7 +28,7 @@ import { buildQuickPrompts } from '../../services/ai/chatPrompts';
 import { getFarmerSummary } from '../../services/data/farmerDataService';
 import { toApiError } from '../../services/api/errors';
 import type { ChatMessage } from '../../types';
-import { colors, spacing, typography, borderRadius } from '../../constants/theme';
+import { colors, spacing, typography, borderRadius, touchTarget } from '../../constants/theme';
 
 function welcomeMessage(crops: string[]): ChatMessage {
   const cropHint =
@@ -136,9 +138,14 @@ export function ChatScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
-      </SafeAreaView>
+      <ScreenLoader
+        header={
+          <>
+            <ScreenHeader title="Farming Assistant" subtitle="Answers based on your real farm data" />
+          </>
+        }
+        label="Loading your chat…"
+      />
     );
   }
 
@@ -224,7 +231,6 @@ export function ChatScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   body: { flex: 1 },
-  loader: { flex: 1, marginTop: 100 },
   header: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
@@ -296,9 +302,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: touchTarget,
+    height: touchTarget,
+    borderRadius: touchTarget / 2,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

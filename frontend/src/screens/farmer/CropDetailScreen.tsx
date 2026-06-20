@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
-import { Card, Button, ScreenWrapper } from '../../components/ui';
+import { Card, Button, EmptyState, ScreenLoader, ScreenWrapper } from '../../components/ui';
 import { SmartPlantingCalendar } from '../../components/calendar/SmartPlantingCalendar';
 import { createPlantingEvent } from '../../services/api/plantationCalendarService';
 import { trackFarmingRecord } from '../../services/analytics/dataCollectionService';
 import { getCropByName, recommendByWeather } from '../../services/api/cropLibraryService';
-import { colors, spacing, typography } from '../../constants/theme';
+import { spacing, typography } from '../../constants/theme';
 import type { CropEntry } from '../../services/api/cropLibraryService';
 import { useAuth } from '../../context/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
@@ -59,10 +59,10 @@ export function CropDetailScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-      <ScreenWrapper scrollable={false}>
-        <ScreenHeader title="Crop details" showBack />
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
-      </ScreenWrapper>
+      <ScreenLoader
+        header={<ScreenHeader title="Crop details" showBack />}
+        label="Loading crop details…"
+      />
     );
   }
 
@@ -70,8 +70,11 @@ export function CropDetailScreen({ route, navigation }: Props) {
     return (
       <ScreenWrapper>
         <ScreenHeader title="Crop details" showBack />
-        <Text style={styles.errorText}>{error ?? 'Crop not found.'}</Text>
-        <Button title="Back to library" onPress={() => navigation.goBack()} fullWidth />
+        <EmptyState
+          message={error ?? 'Crop not found.'}
+          variant="error"
+          action={{ label: 'Back to library', onPress: () => navigation.goBack() }}
+        />
       </ScreenWrapper>
     );
   }
@@ -156,8 +159,6 @@ export function CropDetailScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xxl },
-  errorText: { ...typography.body, color: colors.error, marginBottom: spacing.md },
   cardTitle: { ...typography.h3, marginBottom: spacing.xs },
   cardText: { ...typography.bodySmall, marginBottom: spacing.xs },
   cardHint: { ...typography.caption, fontStyle: 'italic', marginTop: spacing.xs },

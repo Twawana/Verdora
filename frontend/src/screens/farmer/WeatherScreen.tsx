@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   StyleSheet,
   Text,
@@ -8,7 +7,7 @@ import {
 } from 'react-native';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
 import { FieldPicker } from '../../components/fields/FieldPicker';
-import { Card, ScreenWrapper } from '../../components/ui';
+import { Card, EmptyState, InlineLoader, ScreenWrapper } from '../../components/ui';
 import { PlantingRecommendationCard } from '../../components/weather/PlantingRecommendationCard';
 import { useAuth } from '../../context/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
@@ -113,11 +112,9 @@ export function WeatherScreen() {
       ) : null}
 
       {loading && !weather ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <InlineLoader size="large" />
       ) : error ? (
-        <Card variant="highlight">
-          <Text style={styles.errorText}>{error}</Text>
-        </Card>
+        <EmptyState message={error} variant="error" />
       ) : weather ? (
         <>
           <Card variant="elevated" style={styles.weatherCard}>
@@ -156,13 +153,14 @@ export function WeatherScreen() {
               <PlantingRecommendationCard key={item.cropName} item={item} />
             ))
           ) : (
-            <Card>
-              <Text style={styles.empty}>
-                {selectedField
+            <EmptyState
+              message={
+                selectedField
                   ? 'No crops scheduled on this field yet — add events in Calendar.'
-                  : 'No planting recommendations available.'}
-              </Text>
-            </Card>
+                  : 'No planting recommendations available.'
+              }
+              variant="muted"
+            />
           )}
         </>
       ) : null}
@@ -171,8 +169,6 @@ export function WeatherScreen() {
 }
 
 const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xxl },
-  errorText: { ...typography.bodySmall, color: colors.error },
   weatherCard: { marginBottom: spacing.lg },
   weatherMain: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   weatherEmoji: { fontSize: 56, marginRight: spacing.md },
@@ -197,5 +193,4 @@ const styles = StyleSheet.create({
   tipLabel: { ...typography.caption, fontWeight: '700', marginBottom: spacing.xs },
   tipText: { ...typography.bodySmall, lineHeight: 20 },
   sectionTitle: { ...typography.h3, marginBottom: spacing.md },
-  empty: { ...typography.bodySmall, textAlign: 'center' },
 });

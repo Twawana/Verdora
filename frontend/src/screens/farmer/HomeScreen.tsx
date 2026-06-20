@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { OutbreakNearYouBanner } from '../../components/intelligence/OutbreakNearYouBanner';
 import { NavCard } from '../../components/navigation/NavCard';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
-import { Card, ScreenWrapper } from '../../components/ui';
+import { Card, EmptyState, InlineLoader, ScreenWrapper } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { getFarmerSummary, type FarmerSummary } from '../../services/data/farmerDataService';
 import { getFarmerNearbyAlerts } from '../../services/intelligence/intelligenceService';
@@ -65,7 +65,7 @@ export function HomeScreen({ navigation }: Props) {
       />
 
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
+        <InlineLoader />
       ) : summary ? (
         <Card variant="highlight" style={styles.statsCard}>
           <Text style={styles.statsTitle}>Your farm</Text>
@@ -75,7 +75,13 @@ export function HomeScreen({ navigation }: Props) {
             <Text style={styles.cropsMuted}>Add crops in Calendar to unlock scan & weather insights</Text>
           )}
         </Card>
-      ) : null}
+      ) : (
+        <EmptyState
+          message="Could not load your farm summary. Pull down to refresh."
+          variant="muted"
+          style={styles.statsCard}
+        />
+      )}
 
       <Text style={styles.section}>Navigate</Text>
       <NavCard

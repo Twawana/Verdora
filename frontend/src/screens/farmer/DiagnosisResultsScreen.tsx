@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   badgeHealthy: { backgroundColor: colors.surfaceAlt },
-  badgeDisease: { backgroundColor: '#FDE8E8' },
+  badgeDisease: { backgroundColor: colors.errorSurface },
   badgeText: { ...typography.caption, fontWeight: '700', color: colors.primaryDark },
   label: {
     ...typography.caption,

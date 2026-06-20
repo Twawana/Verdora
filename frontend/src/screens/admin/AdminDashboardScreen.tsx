@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -11,7 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Card, ScreenWrapper, Button } from '../../components/ui';
+import { Card, ScreenWrapper, Button, EmptyState, ScreenLoader } from '../../components/ui';
 import { AdminTabBar, type AdminTab } from '../../components/admin/AdminTabBar';
 import { useAuth } from '../../context/AuthContext';
 import { exportUserReport, getAdminDashboard } from '../../services/api/adminService';
@@ -22,7 +21,7 @@ import { KnowledgeGapCard } from '../../components/intelligence/KnowledgeGapCard
 import { PlantingInsightCard } from '../../components/intelligence/PlantingInsightCard';
 import type { AdminDashboardInsights } from '../../types/analytics';
 import type { AdminStackParamList } from '../../navigation/types';
-import { colors, spacing, typography } from '../../constants/theme';
+import { colors, spacing, typography, borderRadius } from '../../constants/theme';
 
 export function AdminDashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
@@ -70,11 +69,7 @@ export function AdminDashboardScreen() {
   };
 
   if (loading && !data) {
-    return (
-      <ScreenWrapper scrollable={false}>
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
-      </ScreenWrapper>
-    );
+    return <ScreenLoader label="Loading dashboard…" />;
   }
 
   if (!data) return null;
@@ -104,13 +99,10 @@ export function AdminDashboardScreen() {
       {tab === 'overview' && (
         <>
           {data.summary.totalFarmers === 0 ? (
-            <Card variant="highlight" style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No data collected yet</Text>
-              <Text style={styles.emptyBody}>
-                Farmers must register, add calendar events, scan crops, use weather, and chat.
-                Data appears here in real time as they use the app.
-              </Text>
-            </Card>
+            <EmptyState
+              title="No data collected yet"
+              message="Farmers must register, add calendar events, scan crops, use weather, and chat. Data appears here in real time as they use the app."
+            />
           ) : null}
           <View style={styles.statGrid}>
             <StatBox label="Farmers" value={data.summary.totalFarmers} />
@@ -173,11 +165,7 @@ export function AdminDashboardScreen() {
 
           <Text style={styles.section}>Disease alerts (heat map clusters)</Text>
           {data.regionalIntelligence.diseaseAlerts.length === 0 ? (
-            <Card>
-              <Text style={styles.itemMeta}>
-                No geospatial clusters yet — need 3+ disease scans within 50 km.
-              </Text>
-            </Card>
+            <EmptyState message="No geospatial clusters yet — need 3+ disease scans within 50 km." variant="muted" />
           ) : (
             data.regionalIntelligence.diseaseAlerts.map((alert) => (
               <DiseaseAlertCard key={alert.id} alert={alert} />
@@ -186,9 +174,7 @@ export function AdminDashboardScreen() {
 
           <Text style={styles.section}>Knowledge gap reports (NGO / extension)</Text>
           {data.regionalIntelligence.knowledgeGaps.length === 0 ? (
-            <Card>
-              <Text style={styles.itemMeta}>No knowledge gaps detected yet.</Text>
-            </Card>
+            <EmptyState message="No knowledge gaps detected yet." variant="muted" />
           ) : (
             data.regionalIntelligence.knowledgeGaps.map((gap) => (
               <KnowledgeGapCard key={gap.id} report={gap} />
@@ -197,11 +183,10 @@ export function AdminDashboardScreen() {
 
           <Text style={styles.section}>Planting window optimization</Text>
           {data.regionalIntelligence.plantingInsights.length === 0 ? (
-            <Card>
-              <Text style={styles.itemMeta}>
-                Add calendar events and weather logs to generate planting insights.
-              </Text>
-            </Card>
+            <EmptyState
+              message="Add calendar events and weather logs to generate planting insights."
+              variant="muted"
+            />
           ) : (
             data.regionalIntelligence.plantingInsights.map((insight) => (
               <PlantingInsightCard key={insight.id} insight={insight} />
@@ -262,7 +247,10 @@ export function AdminDashboardScreen() {
         <>
           <Text style={styles.section}>Farming data ({data.farmingData.length})</Text>
           <Text style={styles.hint}>Plantation dates, harvest dates, soil & methods</Text>
-          {data.farmingData.map((r) => (
+          {data.farmingData.length === 0 ? (
+            <EmptyState message="No farming records yet." variant="muted" />
+          ) : (
+            data.farmingData.map((r) => (
             <Card key={`${r.userId}-${r.id}`} style={styles.itemCard}>
               <Text style={styles.itemTitle}>🌾 {r.cropName}</Text>
               <Text style={styles.itemMeta}>📍 {r.location}</Text>
@@ -276,7 +264,8 @@ export function AdminDashboardScreen() {
               </Text>
               {r.fieldName ? <Text style={styles.itemMeta}>Field: {r.fieldName}</Text> : null}
             </Card>
-          ))}
+            ))
+          )}
         </>
       )}
 
@@ -284,7 +273,7 @@ export function AdminDashboardScreen() {
         <>
           <Text style={styles.section}>Disease outbreaks</Text>
           {data.diseaseOutbreaks.length === 0 ? (
-            <Card><Text style={styles.itemMeta}>No diseases detected yet</Text></Card>
+            <EmptyState message="No diseases detected yet" variant="muted" />
           ) : (
             data.diseaseOutbreaks.map((o) => (
               <Card key={o.disease} style={styles.itemCard}>
@@ -296,7 +285,10 @@ export function AdminDashboardScreen() {
             ))
           )}
           <Text style={styles.section}>Recent crop scans</Text>
-          {data.cropScans.map((s) => (
+          {data.cropScans.length === 0 ? (
+            <EmptyState message="No crop scans recorded yet." variant="muted" />
+          ) : (
+            data.cropScans.map((s) => (
             <Card key={s.id} style={styles.itemCard}>
               <Text style={styles.itemTitle}>
                 {s.cropType} — {s.disease ?? 'Healthy'}
@@ -309,7 +301,8 @@ export function AdminDashboardScreen() {
                 {new Date(s.timestamp).toLocaleString()}
               </Text>
             </Card>
-          ))}
+            ))
+          )}
         </>
       )}
 
@@ -328,7 +321,10 @@ export function AdminDashboardScreen() {
             </Card>
           ))}
           <Text style={styles.section}>Recent environmental logs</Text>
-          {data.environmentLogs.map((e) => (
+          {data.environmentLogs.length === 0 ? (
+            <EmptyState message="No environmental logs yet." variant="muted" />
+          ) : (
+            data.environmentLogs.map((e) => (
             <Card key={e.id} style={styles.itemCard}>
               <Text style={styles.itemTitle}>{e.location}</Text>
               <Text style={styles.itemMeta}>
@@ -336,7 +332,8 @@ export function AdminDashboardScreen() {
               </Text>
               <Text style={styles.itemMeta}>{new Date(e.timestamp).toLocaleString()}</Text>
             </Card>
-          ))}
+            ))
+          )}
         </>
       )}
 
@@ -349,7 +346,10 @@ export function AdminDashboardScreen() {
             </Text>
           </Card>
           <Text style={styles.section}>Topic insights</Text>
-          {data.chatInsights.map((insight) => (
+          {data.chatInsights.length === 0 ? (
+            <EmptyState message="No chat insights yet — farmers need to use the assistant." variant="muted" />
+          ) : (
+            data.chatInsights.map((insight) => (
             <Card key={insight.topic} style={styles.itemCard}>
               <Text style={styles.itemTitle}>{insight.topic}</Text>
               <Text style={styles.itemMeta}>{insight.questionCount} questions</Text>
@@ -358,7 +358,8 @@ export function AdminDashboardScreen() {
               </Text>
               <Text style={styles.itemMeta}>Regions: {insight.locations.join(', ')}</Text>
             </Card>
-          ))}
+            ))
+          )}
         </>
       )}
 
@@ -395,7 +396,6 @@ function StatBox({ label, value }: { label: string; value: string | number }) {
 }
 
 const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xxl },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   statBox: {
     width: '47%',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -430,13 +430,10 @@ const styles = StyleSheet.create({
   tapHint: { ...typography.caption, marginTop: spacing.sm, color: colors.primary, fontWeight: '600' },
   cardTitle: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.xs },
   cardBody: { ...typography.bodySmall, lineHeight: 20 },
-  alertCard: { backgroundColor: '#FFF8E7', marginBottom: spacing.md },
+  alertCard: { backgroundColor: colors.warningSurface, marginBottom: spacing.md },
   alertTitle: { ...typography.bodySmall, fontWeight: '700', color: colors.secondaryDark },
   alertBody: { ...typography.bodySmall, marginTop: spacing.xs },
   link: { ...typography.caption, marginTop: spacing.sm, color: colors.primary, fontWeight: '600' },
-  emptyCard: { marginBottom: spacing.md },
-  emptyTitle: { ...typography.h3, fontSize: 16, marginBottom: spacing.sm },
-  emptyBody: { ...typography.bodySmall, lineHeight: 20 },
   exportRow: {
     flexDirection: 'row',
     gap: spacing.sm,

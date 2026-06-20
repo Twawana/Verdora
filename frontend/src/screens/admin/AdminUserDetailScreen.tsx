@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Platform,
@@ -12,7 +11,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
-import { Button, Card, ScreenWrapper } from '../../components/ui';
+import { Button, Card, EmptyState, ScreenLoader, ScreenWrapper } from '../../components/ui';
 import { exportFarmerReport } from '../../services/api/adminService';
 import { getUserActivityProfile } from '../../services/admin/userActivityService';
 import { toApiError } from '../../services/api/errors';
@@ -77,10 +76,10 @@ export function AdminUserDetailScreen({ route }: Props) {
 
   if (loading && !profile) {
     return (
-      <ScreenWrapper scrollable={false}>
-        <ScreenHeader title="Farmer activity" showBack />
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
-      </ScreenWrapper>
+      <ScreenLoader
+        header={<ScreenHeader title="Farmer activity" showBack />}
+        label="Loading farmer profile…"
+      />
     );
   }
 
@@ -88,9 +87,7 @@ export function AdminUserDetailScreen({ route }: Props) {
     return (
       <ScreenWrapper>
         <ScreenHeader title="Farmer activity" showBack />
-        <Card variant="highlight">
-          <Text style={styles.error}>{error || 'No data available'}</Text>
-        </Card>
+        <EmptyState message={error || 'No data available'} variant="error" />
       </ScreenWrapper>
     );
   }
@@ -162,7 +159,7 @@ export function AdminUserDetailScreen({ route }: Props) {
 
       <Section title={`Crop scans (${scans.length})`}>
         {scans.length === 0 ? (
-          <EmptyHint text="No crop scans recorded yet." />
+          <EmptyState message="No crop scans recorded yet." variant="muted" />
         ) : (
           scans.map((s) => (
             <Card key={s.id} style={styles.itemCard}>
@@ -183,7 +180,7 @@ export function AdminUserDetailScreen({ route }: Props) {
 
       <Section title={`Plantation calendar (${farmingRecords.length})`}>
         {farmingRecords.length === 0 ? (
-          <EmptyHint text="No planting events recorded." />
+          <EmptyState message="No planting events recorded." variant="muted" />
         ) : (
           farmingRecords.map((r) => (
             <Card key={r.id} style={styles.itemCard}>
@@ -201,7 +198,7 @@ export function AdminUserDetailScreen({ route }: Props) {
 
       <Section title={`Weather checks (${environmentLogs.length})`}>
         {environmentLogs.length === 0 ? (
-          <EmptyHint text="No weather logs recorded." />
+          <EmptyState message="No weather logs recorded." variant="muted" />
         ) : (
           environmentLogs.map((e) => (
             <Card key={e.id} style={styles.itemCard}>
@@ -217,7 +214,7 @@ export function AdminUserDetailScreen({ route }: Props) {
 
       <Section title={`Chat history (${chatQuestions.length})`}>
         {chatQuestions.length === 0 ? (
-          <EmptyHint text="No chat questions recorded." />
+          <EmptyState message="No chat questions recorded." variant="muted" />
         ) : (
           chatQuestions.map((c) => (
             <Card key={c.id} style={styles.itemCard}>
@@ -265,17 +262,7 @@ function Meta({ label, value }: { label: string; value: string }) {
   );
 }
 
-function EmptyHint({ text }: { text: string }) {
-  return (
-    <Card variant="highlight">
-      <Text style={styles.empty}>{text}</Text>
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-  error: { ...typography.bodySmall, color: colors.error },
   consentCard: { marginBottom: spacing.md },
   consentTitle: { ...typography.bodySmall, fontWeight: '700', marginBottom: spacing.xs },
   consentBody: { ...typography.caption, lineHeight: 18 },
@@ -316,5 +303,4 @@ const styles = StyleSheet.create({
   chatAnswer: { ...typography.bodySmall, marginTop: 4, lineHeight: 20, color: colors.textSecondary },
   metaRow: { ...typography.bodySmall, marginBottom: spacing.xs },
   metaLabel: { fontWeight: '700', color: colors.primaryDark },
-  empty: { ...typography.bodySmall, textAlign: 'center', fontStyle: 'italic' },
 });

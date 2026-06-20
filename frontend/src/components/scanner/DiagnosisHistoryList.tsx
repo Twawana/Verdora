@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DiagnosisResult } from '../../types';
-import { Card } from '../ui/Card';
+import { Card, EmptyState } from '../ui';
 import { colors, spacing, typography } from '../../constants/theme';
 
 interface DiagnosisHistoryListProps {
@@ -21,9 +21,10 @@ function formatDate(iso: string) {
 export function DiagnosisHistoryList({ items, onPressItem }: DiagnosisHistoryListProps) {
   if (items.length === 0) {
     return (
-      <Card variant="highlight">
-        <Text style={styles.empty}>No scans yet. Capture or upload a crop photo to begin.</Text>
-      </Card>
+      <EmptyState
+        message="No scans yet. Capture or upload a crop photo to begin."
+        variant="muted"
+      />
     );
   }
 
@@ -75,5 +76,4 @@ const styles = StyleSheet.create({
   disease: { ...typography.bodySmall, marginTop: 2 },
   meta: { ...typography.caption, marginTop: 4 },
   chevron: { fontSize: 22, color: colors.textMuted, marginLeft: spacing.sm },
-  empty: { ...typography.bodySmall, textAlign: 'center' },
 });

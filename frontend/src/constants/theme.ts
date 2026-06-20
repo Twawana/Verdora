@@ -20,6 +20,9 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
   overlay: 'rgba(27, 67, 50, 0.6)',
+  scrimLight: 'rgba(0, 0, 0, 0.15)',
+  errorSurface: '#FDE8E8',
+  warningSurface: '#FFF8E7',
 };
 
 export const spacing = {
@@ -57,3 +60,9 @@ export const shadows = {
     elevation: 3,
   },
 };
+
+/** Minimum tappable control size (send buttons, icon buttons). */
+export const touchTarget = 44;
+
+/** Branded splash logo dimensions. */
+export const logoSize = 200;

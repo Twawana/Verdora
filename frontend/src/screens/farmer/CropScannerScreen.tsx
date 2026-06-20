@@ -14,7 +14,7 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
-import { Button, ScreenWrapper } from '../../components/ui';
+import { Button, InlineLoader, ScreenWrapper } from '../../components/ui';
 import { DiagnosisHistoryList } from '../../components/scanner/DiagnosisHistoryList';
 import { useAuth } from '../../context/AuthContext';
 import { useDiagnosis } from '../../context/DiagnosisContext';
@@ -143,7 +143,7 @@ export function CropScannerScreen({ navigation }: Props) {
   if (!permission) {
     return (
       <ScreenWrapper scrollable={false}>
-        <ActivityIndicator size="large" color={colors.primary} style={styles.centered} />
+        <InlineLoader size="large" />
       </ScreenWrapper>
     );
   }
@@ -244,7 +244,6 @@ export function CropScannerScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  centered: { marginTop: spacing.xxl },
   header: { paddingHorizontal: spacing.md, marginTop: spacing.md, marginBottom: spacing.md },
   title: { ...typography.h2, color: colors.primary },
   subtitle: { ...typography.bodySmall, marginTop: spacing.xs },
@@ -260,7 +259,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: colors.scrimLight,
   },
   frame: {
     width: '75%',

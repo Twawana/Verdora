@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -9,7 +8,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
-import { ScreenWrapper, Card, Input, Button } from '../../components/ui';
+import { ScreenWrapper, Card, Input, EmptyState, InlineLoader } from '../../components/ui';
 import { listCrops, searchCrops } from '../../services/api/cropLibraryService';
 import type { CropEntry } from '../../services/api/cropLibraryService';
 import { colors, spacing, typography } from '../../constants/theme';
@@ -70,17 +69,19 @@ export function CropLibraryScreen({ navigation }: Props) {
         }
         ListEmptyComponent={
           loading ? (
-            <ActivityIndicator color={colors.primary} style={styles.loader} />
+            <InlineLoader />
           ) : error ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>{error}</Text>
-              <Button title="Try again" onPress={() => load(query)} />
-            </View>
+            <EmptyState
+              message={error}
+              variant="error"
+              action={{ label: 'Try again', onPress: () => load(query) }}
+            />
           ) : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>No crops found</Text>
-              <Text style={styles.emptyText}>Try a different search term.</Text>
-            </View>
+            <EmptyState
+              title="No crops found"
+              message="Try a different search term."
+              variant="muted"
+            />
           )
         }
         renderItem={({ item }) => (
@@ -106,11 +107,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: { paddingTop: spacing.sm },
-  loader: { marginTop: spacing.xl },
   card: { marginVertical: spacing.xs },
   title: { ...typography.h3, color: colors.primaryDark },
   meta: { ...typography.caption, marginTop: spacing.xs },
-  empty: { padding: spacing.lg, alignItems: 'center', gap: spacing.sm },
-  emptyTitle: { ...typography.h3, color: colors.primary },
-  emptyText: { ...typography.bodySmall, color: colors.textSecondary, textAlign: 'center' },
 });

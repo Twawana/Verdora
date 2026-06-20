@@ -1,10 +1,13 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
-import { colors, typography } from '../../constants/theme';
+import { colors, logoSize, spacing, typography } from '../../constants/theme';
 
 const LOGO = require('../../../assets/verdora-logo.png');
-const MIN_SPLASH_MS = 3500;
+const SPLASH_SEEN_KEY = '@verdora_splash_seen';
+const MIN_SPLASH_MS_FIRST = 2800;
+const MIN_SPLASH_MS_RETURN = 1200;
 
 interface AppSplashProps {
   /** App finished loading (e.g. auth restored) */
@@ -22,10 +25,12 @@ export function AppSplash({ ready, onDone }: AppSplashProps) {
   const exitStarted = useRef(false);
   const readyRef = useRef(ready);
   readyRef.current = ready;
+  const [minSplashMs, setMinSplashMs] = useState(MIN_SPLASH_MS_FIRST);
 
   const tryExit = useCallback(() => {
     if (!readyRef.current || !minTimeDone.current || exitStarted.current) return;
     exitStarted.current = true;
+    AsyncStorage.setItem(SPLASH_SEEN_KEY, '1').catch(() => undefined);
     Animated.timing(overlayOpacity, {
       toValue: 0,
       duration: 420,
@@ -34,6 +39,14 @@ export function AppSplash({ ready, onDone }: AppSplashProps) {
       if (finished) onDone();
     });
   }, [onDone, overlayOpacity]);
+
+  useEffect(() => {
+    AsyncStorage.getItem(SPLASH_SEEN_KEY)
+      .then((seen) => {
+        if (seen) setMinSplashMs(MIN_SPLASH_MS_RETURN);
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     Animated.sequence([
@@ -59,13 +72,15 @@ export function AppSplash({ ready, onDone }: AppSplashProps) {
       SplashScreen.hideAsync().catch(() => undefined);
     });
 
+    minTimeDone.current = false;
+    exitStarted.current = false;
     const timer = setTimeout(() => {
       minTimeDone.current = true;
       tryExit();
-    }, MIN_SPLASH_MS);
+    }, minSplashMs);
 
     return () => clearTimeout(timer);
-  }, [logoOpacity, logoScale, titleOpacity, tryExit]);
+  }, [logoOpacity, logoScale, minSplashMs, titleOpacity, tryExit]);
 
   useEffect(() => {
     tryExit();
@@ -96,22 +111,22 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xl,
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: logoSize,
+    height: logoSize,
   },
   title: {
     ...typography.h1,
     color: colors.primaryDark,
-    marginTop: 20,
+    marginTop: spacing.lg,
     letterSpacing: 0.5,
   },
   tagline: {
     ...typography.bodySmall,
     color: colors.textMuted,
-    marginTop: 8,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
 });

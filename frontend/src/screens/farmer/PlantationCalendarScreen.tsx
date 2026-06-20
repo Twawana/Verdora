@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   RefreshControl,
   StyleSheet,
   Text,
 } from 'react-native';
 import { ScreenHeader } from '../../components/navigation/ScreenHeader';
-import { Card, ScreenWrapper } from '../../components/ui';
+import { EmptyState, InlineLoader, ScreenWrapper } from '../../components/ui';
 import { CropPlantingPlanner, type PlannerSavePayload } from '../../components/calendar/CropPlantingPlanner';
 import { EventFormModal, type EventFormValues } from '../../components/calendar/EventFormModal';
 import { PlantingEventCard } from '../../components/calendar/PlantingEventCard';
@@ -152,13 +151,12 @@ export function PlantationCalendarScreen() {
         <Text style={styles.sectionTitle}>My calendar ({events.length})</Text>
 
         {loading && events.length === 0 ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
+          <InlineLoader />
         ) : events.length === 0 ? (
-          <Card variant="highlight">
-            <Text style={styles.empty}>
-              No crops scheduled yet. Pick a crop above and tap “Add to my calendar”.
-            </Text>
-          </Card>
+          <EmptyState
+            message='No crops scheduled yet. Pick a crop above and tap "Add to my calendar".'
+            variant="muted"
+          />
         ) : (
           events.map((event) => (
             <PlantingEventCard
@@ -185,6 +183,4 @@ export function PlantationCalendarScreen() {
 
 const styles = StyleSheet.create({
   sectionTitle: { ...typography.h3, marginVertical: spacing.md },
-  loader: { marginVertical: spacing.xl },
-  empty: { ...typography.bodySmall, textAlign: 'center', lineHeight: 20 },
 });
