@@ -1,63 +1,61 @@
 import { hasRestApi, env } from '../../config/env';
 import type { User, WeatherData } from '../../types';
 import { getLastEnvironmentLog, getUserFarmingRecords } from '../analytics/dataCollectionService';
+import {
+  buildSeasonalCropRecommendations,
+  buildWeatherQueryVariants,
+  drySeasonFarmingTip,
+} from '../ai/namibiaWeather';
 import { API_ENDPOINTS, EXTERNAL_APIS } from './endpoints';
 import { apiGet, externalClient } from './client';
 import type { PlantingRecommendation, WeatherQueryParams, WeatherResponse } from './types';
 
-function derivePlantingRecommendation(temp?: number, humidity?: number): string {
-  if (temp == null || humidity == null) {
-    return 'Check conditions daily before field work.';
-  }
-  if (temp >= 28 && humidity > 75) {
-    return 'High humidity — delay spraying; favorable for rice transplanting if fields are ready.';
-  }
-  if (temp >= 20 && temp <= 30 && humidity < 70) {
-    return 'Good conditions for transplanting vegetables and direct-seeding.';
-  }
-  return 'Monitor forecast daily; protect seedlings from midday heat stress.';
-}
+function mapOpenWeatherResponse(data: Record<string, unknown>, fallbackLocation?: string): WeatherData {
+  const main = data.main as { temp?: number; humidity?: number } | undefined;
+  const weather = (data.weather as { description?: string; icon?: string }[] | undefined)?.[0];
+  const temp = main?.temp;
+  const humidity = main?.humidity;
 
-function buildCropRecommendations(
-  crops: string[],
-  temp: number,
-  humidity: number,
-): PlantingRecommendation[] {
-  return crops.map((cropName) => {
-    let status: PlantingRecommendation['status'] = 'ideal';
-    let reason = `Current ${temp}°C and ${humidity}% humidity suit ${cropName} in your area.`;
-
-    if (humidity > 80) {
-      status = 'caution';
-      reason = `High humidity increases fungal risk for ${cropName} — ensure ventilation.`;
-    }
-    if (temp > 35) {
-      status = 'avoid';
-      reason = `Heat stress likely for ${cropName} — irrigate early morning or evening.`;
-    }
-
-    return { cropName, status, reason };
-  });
+  return {
+    location: (data.name as string | undefined) ?? fallbackLocation ?? 'Unknown',
+    temperature: Math.round(temp ?? 0),
+    humidity: humidity ?? 0,
+    condition: weather?.description ?? 'Unknown',
+    icon: weather?.icon ?? '01d',
+    recommendation: drySeasonFarmingTip(temp ?? 0, humidity ?? 0),
+  };
 }
 
 async function openWeatherGetCurrent(params: WeatherQueryParams): Promise<WeatherData> {
   const { openWeatherApiKey } = env;
   if (!openWeatherApiKey) throw new Error('EXPO_PUBLIC_OPENWEATHER_API_KEY is not set');
 
-  const query = params.city
-    ? { q: params.city, appid: openWeatherApiKey, units: 'metric' }
-    : { lat: params.lat, lon: params.lon, appid: openWeatherApiKey, units: 'metric' };
+  if (params.lat != null && params.lon != null) {
+    const { data } = await externalClient.get(EXTERNAL_APIS.openWeather, {
+      params: { lat: params.lat, lon: params.lon, appid: openWeatherApiKey, units: 'metric' },
+    });
+    return mapOpenWeatherResponse(data, params.city);
+  }
 
-  const { data } = await externalClient.get(EXTERNAL_APIS.openWeather, { params });
+  if (!params.city?.trim()) {
+    throw new Error('City or coordinates required for weather lookup');
+  }
 
-  return {
-    location: data.name ?? params.city ?? 'Unknown',
-    temperature: Math.round(data.main?.temp ?? 0),
-    humidity: data.main?.humidity ?? 0,
-    condition: data.weather?.[0]?.description ?? 'Unknown',
-    icon: data.weather?.[0]?.icon ?? '01d',
-    recommendation: derivePlantingRecommendation(data.main?.temp, data.main?.humidity),
-  };
+  const variants = buildWeatherQueryVariants(params.city);
+  let lastError: unknown;
+
+  for (const q of variants) {
+    try {
+      const { data } = await externalClient.get(EXTERNAL_APIS.openWeather, {
+        params: { q, appid: openWeatherApiKey, units: 'metric' },
+      });
+      return mapOpenWeatherResponse(data, params.city);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error(`Could not find weather for "${params.city}"`);
 }
 
 async function weatherFromLastLog(user: User): Promise<WeatherResponse | null> {
@@ -73,10 +71,10 @@ async function weatherFromLastLog(user: User): Promise<WeatherResponse | null> {
     humidity: log.humidity,
     condition: log.condition,
     icon: 'cached',
-    recommendation: derivePlantingRecommendation(log.temperature, log.humidity),
+    recommendation: drySeasonFarmingTip(log.temperature, log.humidity),
     plantingWindows:
       crops.length > 0
-        ? buildCropRecommendations(crops, log.temperature, log.humidity)
+        ? await buildSeasonalCropRecommendations(crops, log.temperature, log.humidity)
         : [],
   };
 }
@@ -111,7 +109,7 @@ export async function getWeather(user: User, params?: WeatherQueryParams): Promi
       return {
         ...weather,
         location: locationLabel,
-        plantingWindows: buildCropRecommendations(
+        plantingWindows: await buildSeasonalCropRecommendations(
           crops,
           weather.temperature,
           weather.humidity,

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -31,17 +31,41 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<FarmerStackParamList>
 >;
 
+const SCAN_STAGES = [
+  'Reading image…',
+  'Identifying crop…',
+  'Checking for disease…',
+  'Preparing advice…',
+];
+
 export function CropScannerScreen({ navigation }: Props) {
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStage, setAnalysisStage] = useState(SCAN_STAGES[0]);
   const [cameraReady, setCameraReady] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [selectedField, setSelectedField] = useState<FarmField | null>(null);
   const { user } = useAuth();
   const { history, addDiagnosis } = useDiagnosis();
   const { showWarning, showInfo } = useFeedback();
+
+  useEffect(() => {
+    if (!isAnalyzing) {
+      setAnalysisStage(SCAN_STAGES[0]);
+      return;
+    }
+
+    let stageIndex = 0;
+    setAnalysisStage(SCAN_STAGES[0]);
+    const interval = setInterval(() => {
+      stageIndex = Math.min(stageIndex + 1, SCAN_STAGES.length - 1);
+      setAnalysisStage(SCAN_STAGES[stageIndex]);
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [isAnalyzing]);
 
   const runDiagnosis = useCallback(
     async (uri: string) => {
@@ -166,7 +190,7 @@ export function CropScannerScreen({ navigation }: Props) {
             <Image source={{ uri: previewUri }} style={styles.preview} />
             <View style={styles.analyzingOverlay}>
               <ActivityIndicator size="large" color={colors.white} />
-              <Text style={styles.analyzingText}>Analyzing your crop…</Text>
+              <Text style={styles.analyzingText}>{analysisStage}</Text>
               <Text style={styles.analyzingHint}>This usually takes a few seconds</Text>
             </View>
           </View>

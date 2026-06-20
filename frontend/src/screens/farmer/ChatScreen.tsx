@@ -22,6 +22,7 @@ import {
   saveChatHistory,
   sendChatMessage,
 } from '../../services/api/chatService';
+import { buildQuickPrompts } from '../../services/ai/chatPrompts';
 import { getFarmerSummary } from '../../services/data/farmerDataService';
 import { toApiError } from '../../services/api/errors';
 import type { ChatMessage } from '../../types';
@@ -57,15 +58,7 @@ export function ChatScreen() {
       const summary = await getFarmerSummary(user);
       const stored = await loadChatHistory(user.id);
       const crops = summary.crops;
-      setPrompts(
-        crops.length > 0
-          ? [
-              `When should I plant ${crops[0]}?`,
-              `How is my ${crops[0]} doing?`,
-              `Weather advice for ${crops[0]}`,
-            ]
-          : ['What crops should I start with?', 'How do I use the calendar?'],
-      );
+      setPrompts(buildQuickPrompts(user, summary));
       setMessages(stored.length > 0 ? stored : [welcomeMessage(crops)]);
       setLoading(false);
     })();

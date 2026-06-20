@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hasRestApi, env } from '../../config/env';
 import type { ChatMessage, User } from '../../types';
 import { generateId } from '../../utils/generateId';
+import { buildClaudeSystemPrompt } from '../ai/farmerContext';
 import { getUserCropScans, getUserFarmingRecords } from '../analytics/dataCollectionService';
 import { API_ENDPOINTS, CLAUDE_CHAT_MODEL, EXTERNAL_APIS } from './endpoints';
 import { apiPost, externalClient } from './client';
@@ -80,21 +81,6 @@ async function localSendMessage(user: User, request: ChatRequest): Promise<ChatR
   };
 }
 
-function buildClaudeSystemPrompt(user: User): string {
-  const farmingCrops = user.cropsPlanted?.join(', ') || 'none registered yet';
-  const recentContext = user.location
-    ? `Location: ${user.location}.`
-    : 'Location: not set — ask them to update Profile.';
-
-  return (
-    `You are Verdora, an agriculture assistant for Namibian farmers (powered by Claude). ` +
-    `${recentContext} Registered crops: ${farmingCrops}. ` +
-    `Farm type: ${user.farmerType ?? 'unspecified'}. Soil: ${user.soilType ?? 'unspecified'}. ` +
-    `Give practical, concise advice using their real farm context. Prefer locally available, ` +
-    `low-cost interventions when possible. When unsure, suggest the Weather tab or crop scanner.`
-  );
-}
-
 async function claudeSendMessage(request: ChatRequest, user: User): Promise<ChatResponse> {
   const { claudeApiKey } = env;
   if (!claudeApiKey) throw new Error('EXPO_PUBLIC_CLAUDE_API_KEY is not set');
@@ -112,7 +98,7 @@ async function claudeSendMessage(request: ChatRequest, user: User): Promise<Chat
     {
       model: CLAUDE_CHAT_MODEL,
       max_tokens: 1024,
-      system: buildClaudeSystemPrompt(user),
+      system: await buildClaudeSystemPrompt(user),
       messages,
     },
     {

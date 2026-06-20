@@ -1,6 +1,10 @@
 import { env, hasRestApi } from '../../config/env';
 import { CROP_KNOWLEDGE, DEFAULT_CROP_KNOWLEDGE } from '../../data/cropKnowledge';
-import { CROP_GUIDE_NAMES } from '../../data/cropPlantingGuide';
+import {
+  GEMINI_CROP_CATALOG,
+  NAMIBIA_TREATMENT_HINTS,
+  normalizeCropName,
+} from '../ai/cropCatalog';
 import type { DiagnosisResult, User } from '../../types';
 import { generateId } from '../../utils/generateId';
 import { mimeTypeFromUri, readImageAsBase64 } from '../../utils/readImageBase64';
@@ -10,10 +14,6 @@ import { API_ENDPOINTS, EXTERNAL_APIS } from './endpoints';
 import { apiClient, externalClient } from './client';
 import { toApiError } from './errors';
 import type { DiagnoseCropResponse, DiagnosisOutcome } from './types';
-
-const KNOWN_CROP_NAMES = [...new Set([...Object.keys(CROP_KNOWLEDGE), ...CROP_GUIDE_NAMES])]
-  .slice(0, 24)
-  .join(', ');
 
 interface GeminiDiagnosisPayload {
   cropName?: string;
@@ -39,11 +39,22 @@ function buildGeminiScanPrompt(user: User): string {
   return (
     `You are Verdora crop disease analyst for Namibian farmers (Gemini vision). ` +
     `Farmer location: ${user.location ?? 'Namibia'}. Registered crops: ${crops}. ` +
-    `Prefer crop names from this list when possible: ${KNOWN_CROP_NAMES}. ` +
-    `If the image is not a crop, or is too blurry to tell, set confidence below 0.4 and explain in treatment. ` +
-    `Treatment advice should favor locally available, low-cost options when possible. ` +
+    `Use crop names ONLY from this catalog when possible: ${GEMINI_CROP_CATALOG}. ` +
+    `If the image is not a plant/crop (e.g. person, tool, soil only, sky), set cropName to "not a crop" and confidence below 0.3. ` +
+    `If the image is too blurry or too far away to identify, set confidence below 0.4 and say so in treatment. ` +
+    `${NAMIBIA_TREATMENT_HINTS} ` +
     `Respond ONLY with valid JSON (no markdown): ` +
     `{"cropName":"string","disease":"string or null if healthy","confidence":0.0,"treatment":"actionable advice"}`
+  );
+}
+
+function isNonCropImage(parsed: GeminiDiagnosisPayload): boolean {
+  const name = parsed.cropName?.toLowerCase() ?? '';
+  return (
+    name.includes('not a crop') ||
+    name.includes('no crop') ||
+    name.includes('not crop') ||
+    name.includes('non-crop')
   );
 }
 
@@ -91,11 +102,31 @@ async function geminiDiagnoseCrop(imageUri: string, user: User): Promise<Diagnos
 
   const confidence = Math.min(1, Math.max(0, parsed.confidence ?? 0));
   const lowConfidence = confidence < 0.45;
+  const nonCrop = isNonCropImage(parsed) || (confidence < 0.35 && !normalizeCropName(parsed.cropName));
+
+  if (nonCrop) {
+    return {
+      result: {
+        id: generateId('diag'),
+        cropName: 'Not a crop',
+        disease: null,
+        confidence,
+        treatment:
+          parsed.treatment?.trim() ||
+          'This does not look like a crop photo. Frame a clear shot of the affected leaf or plant in good light.',
+        imageUri,
+        scannedAt: new Date().toISOString(),
+      },
+      notice: 'No crop detected — try a closer photo of the plant or leaf.',
+    };
+  }
+
+  const cropName = normalizeCropName(parsed.cropName) ?? fallbackCrop;
 
   return {
     result: {
       id: generateId('diag'),
-      cropName: parsed.cropName?.trim() || fallbackCrop,
+      cropName,
       disease: parsed.disease ?? null,
       confidence,
       treatment:
