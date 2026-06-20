@@ -14,7 +14,7 @@ import type { LoginRequest, LoginResponse, RegisterRequest } from './types';
 function assertAuthConfigured(): void {
   if (!hasRestApi && !isSupabaseConfigured()) {
     throw new Error(
-      'Authentication is not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in .env',
+      'Authentication is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to frontend/.env (copy from .env.example), then restart Expo with npm run start:clear.',
     );
   }
 }
