@@ -63,3 +63,19 @@ git ls-files | grep -i "\.env$"
 ```
 
 Ensure `.env` and `frontend/.env` are in `.gitignore`. Rotate any keys that were ever committed.
+
+## Pre-test verification
+
+Before tagging a tester build:
+
+```bash
+npm run verify          # typecheck + secrets check
+```
+
+Complete the manual device checklist in [`docs/PRE_TEST_CHECKLIST.md`](docs/PRE_TEST_CHECKLIST.md), then tag:
+
+```bash
+git checkout testing
+git tag -a v1.0.0-test1 -m "First tester round: June 2026"
+git push origin v1.0.0-test1
+```

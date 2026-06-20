@@ -11,6 +11,7 @@
     "ios": "npm run ios --prefix frontend",
     "web": "npm run web --prefix frontend",
     "typecheck": "npm run typecheck --prefix frontend",
+    "verify": "bash scripts/pre-test-verify.sh",
     "install:frontend": "npm install --prefix frontend"
   },
   "dependencies": {

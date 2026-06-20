@@ -48,7 +48,9 @@ From the repo root you can run the same scripts via `npm start`, `npm run start:
    - `EXPO_PUBLIC_CLAUDE_API_KEY` — Chat assistant (Claude)
    - `EXPO_PUBLIC_GEMINI_API_KEY` — Crop scanner (Gemini vision)
 3. Optionally set `EXPO_PUBLIC_API_URL` if you deploy a separate REST backend.
-4. Users register and sign in with real accounts via **Supabase Auth** (no demo credentials).
+4. Users register and sign in via **Supabase Auth**. For demo/test builds, see [`../supabase/DEMO_SETUP.md`](../supabase/DEMO_SETUP.md) and set `EXPO_PUBLIC_DEMO_MODE=1`.
+
+Before handing to testers, complete [`../docs/PRE_TEST_CHECKLIST.md`](../docs/PRE_TEST_CHECKLIST.md) and run `npm run verify` from the repo root.
 
 ## AI & weather providers
 

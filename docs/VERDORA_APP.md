@@ -361,22 +361,23 @@ Creates `role: 'farmer'`, upserts profile to Supabase, tracks profile, persists 
 | Fields | `FieldsManager` — up to **5** named plots, optional lat/lng |
 | Farm details | Size, farmer type, soil type, farming methods |
 | Privacy | `PrivacySettingsCard` — consent toggle, cloud sync indicator |
+| Feedback | **Send feedback** — mailto link (`EXPO_PUBLIC_FEEDBACK_EMAIL`) |
 | Actions | Save → `updateProfile()`; Logout |
 
 Only renders full editor for `user.role === 'farmer'`.
 
 ---
 
-### 8.9 Farmer — orphan screens (not in navigator)
+### 8.9 Farmer — Crop Library (stack screens)
 
-These files exist but are **unreachable** in the current navigation tree:
+Reachable from **Home → Crop Library** (`FarmerNavigator` stack):
 
-| Screen | File | Intended behavior |
-|--------|------|-------------------|
+| Screen | File | Behavior |
+|--------|------|----------|
 | Crop Library | `CropLibraryScreen.tsx` | Searchable crop list from `cropLibraryService` |
 | Crop Detail | `CropDetailScreen.tsx` | Crop info, `SmartPlantingCalendar`, add to calendar |
 
-`CropLibraryScreen` navigates to `'CropDetail'` which is **not registered** in any navigator.
+Stack routes: `CropLibrary`, `CropDetail` (registered in `FarmerNavigator.tsx`).
 
 ---
 
@@ -890,15 +891,14 @@ Web: no live camera — gallery picker only.
 
 ---
 
-## 26. Known gaps and orphan code
+## 26. Known gaps
 
 | Item | Status | Notes |
 |------|--------|-------|
-| `CropLibraryScreen` | Not in navigator | Unreachable |
-| `CropDetailScreen` | Not in navigator | Route `CropDetail` undefined |
 | REST backend | Optional / not in repo | Routes defined in `endpoints.ts` only |
 | Email confirmation | Supabase setting | Disable for instant dev signup |
-| Token refresh on cold start | Not implemented | User stays "logged in" from AsyncStorage |
+| Token refresh on cold start | Partial | `validateStoredUser()` re-checks session; full refresh token rotation not implemented |
+| In-app feedback form | Post-test | Profile uses mailto link; see `POST_TEST_IDEAS.md` |
 
 ---
 
@@ -944,8 +944,8 @@ frontend/src/screens/
 ├── farmer/WeatherScreen.tsx
 ├── farmer/ChatScreen.tsx
 ├── farmer/ProfileScreen.tsx
-├── farmer/CropLibraryScreen.tsx      # orphan
-├── farmer/CropDetailScreen.tsx       # orphan
+├── farmer/CropLibraryScreen.tsx
+├── farmer/CropDetailScreen.tsx
 ├── admin/AdminDashboardScreen.tsx
 └── admin/AdminUserDetailScreen.tsx
 ```
@@ -994,6 +994,8 @@ frontend/src/services/
 | Quick start | `README.md` |
 | Frontend README | `frontend/README.md` |
 | Supabase setup | `supabase/SETUP.md` |
+| Pre-test checklist | `docs/PRE_TEST_CHECKLIST.md` |
+| Demo setup | `supabase/DEMO_SETUP.md` |
 | SQL file index | `supabase/README.md` |
 | Data architecture | `backend/docs/DATA_ARCHITECTURE.md` |
 | Agent / Expo notes | `AGENTS.md` |

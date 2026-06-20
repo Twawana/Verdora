@@ -47,6 +47,8 @@ Verdora/
 
 For demos and tester builds, see [`supabase/DEMO_SETUP.md`](supabase/DEMO_SETUP.md) and [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
 
+Before the test round, complete [`docs/PRE_TEST_CHECKLIST.md`](docs/PRE_TEST_CHECKLIST.md) and run `npm run verify`.
+
 ## Environment
 
 Copy `frontend/.env.example` to `frontend/.env`. Required:
