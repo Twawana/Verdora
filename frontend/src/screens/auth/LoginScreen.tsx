@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, Input, ScreenWrapper } from '../../components/ui';
 import { DEMO_ACCOUNTS } from '../../constants/demoAccounts';
@@ -7,6 +7,8 @@ import { env } from '../../config/env';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
 import type { AuthStackParamList } from '../../navigation/types';
+
+const LOGO = require('../../../assets/verdora-logo.png');
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -28,7 +30,15 @@ export function LoginScreen({ navigation }: Props) {
   return (
     <ScreenWrapper keyboardAvoiding centerContent>
       <View style={styles.header}>
-        <Text style={styles.logo}>🌱 Verdora</Text>
+        <View style={styles.brandRow}>
+          <Image
+            source={LOGO}
+            style={styles.logoImage}
+            resizeMode="contain"
+            accessibilityLabel="Verdora logo"
+          />
+          <Text style={styles.logoText}>Verdora</Text>
+        </View>
         <Text style={styles.subtitle}>Smart farming at your fingertips</Text>
       </View>
 
@@ -83,7 +93,9 @@ export function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   header: { alignItems: 'center', marginBottom: spacing.xl },
-  logo: { fontSize: 36, fontWeight: '700', color: colors.primary },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  logoImage: { width: 48, height: 48 },
+  logoText: { fontSize: 36, fontWeight: '700', color: colors.primary },
   subtitle: { ...typography.bodySmall, marginTop: spacing.sm },
   error: { ...typography.bodySmall, color: colors.error, marginBottom: spacing.md },
   demoWrap: { marginBottom: spacing.md, gap: spacing.sm },
